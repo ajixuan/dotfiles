@@ -35,11 +35,13 @@ function start-ssh-agent {
       echo "Cleaning ssh dir.."
       rm "${HOME}/.ssh/ssh_agent.*"
       eval "$(ssh-agent -k -a ${sock_dir})"
+      ssh-add ~/.ssh/*_rsa
       trap "pkill ssh-agent" EXIT
   # Both don't exist
   else
       echo "Starting ssh-agent"
       eval "$(ssh-agent -a ${sock_dir})"
+      ssh-add ~/.ssh/*_rsa
       trap "pkill ssh-agent" EXIT
   fi
 }
