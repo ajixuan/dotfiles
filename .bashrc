@@ -43,3 +43,5 @@ function start-ssh-agent {
       trap "pkill ssh-agent" EXIT
   fi
 }
+
+start-ssh-agent
