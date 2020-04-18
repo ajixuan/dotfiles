@@ -16,7 +16,7 @@ function start-ssh-agent {
   fi
 }
 
-function start_vpn {
+function start-vpn {
     local default_config_dir="/etc/openvpn/ipvanish-configs/"
     local default_ovpn_config="/etc/openvpn/client/default.ovpn"
     local region_string="${1:- }"
@@ -24,6 +24,7 @@ function start_vpn {
     ovpn_config="${ovpn_config:-${default_ovpn_config}}"
     echo "Using ovpn config file: \"${ovpn_config}\""
     sudo openvpn "${ovpn_config}"
+    reset
 }
 
 start-ssh-agent
