@@ -27,22 +27,15 @@ function start-ssh-agent {
   local pid_dir="${HOME}/.ssh/ssh_agent.pid"
 
   # Both pid and sock exists
-  if [ -f ${sock_dir} ] && [ -f ${pid_dir} ]; then
+  if [ -S "${sock_dir}" ] && [ -f "${pid_dir}" ]; then
       export SSH_AUTH_SOCK="${sock_dir}"
       export SSH_AGENT_PID="${pid_dir}"
-  # Only one of them exists
-  elif [ -f ${sock_dir} ] || [  -f ${pid_dir} ]; then
-      echo "Cleaning ssh dir.."
-      rm "${HOME}/.ssh/ssh_agent.*"
-      eval "$(ssh-agent -k -a ${sock_dir})"
-      ssh-add ~/.ssh/*_rsa
-      trap "pkill ssh-agent" EXIT
-  # Both don't exist
   else
       echo "Starting ssh-agent"
       eval "$(ssh-agent -a ${sock_dir})"
+      echo "${SSH_AGENT_PID}" > "${pid_dir}"
       ssh-add ~/.ssh/*_rsa
-      trap "pkill ssh-agent" EXIT
+      trap "pkill ssh-agent && rm ${sock_dir} ${pid_dir}" EXIT
   fi
 }
 
