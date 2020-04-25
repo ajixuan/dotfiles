@@ -16,7 +16,7 @@ function start-ssh-agent {
   fi
 }
 
-function start-vpn {
+function start_vpn {
     local default_config_dir="/etc/openvpn/ipvanish-configs/"
     local default_ovpn_config="/etc/openvpn/client/default.ovpn"
     local region_string="${1:- }"
@@ -25,6 +25,22 @@ function start-vpn {
     echo "Using ovpn config file: \"${ovpn_config}\""
     sudo openvpn "${ovpn_config}"
     reset
+}
+
+function torrent {
+    local magnet="${1}"
+    local default_port=""
+}
+
+function find_exc {
+    local name=${1}
+    shift
+    local exclude=()
+    for item in "$@"; do
+        exclude+=("-not -path ${item}")
+    done
+    echo "find -name \"${name}\" -prune ${exclude[@]} -print"
+    find -name "${name}" -prune ${exclude[@]} -print
 }
 
 start-ssh-agent
