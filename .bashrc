@@ -27,11 +27,6 @@ function start_vpn {
     reset
 }
 
-function torrent {
-    local magnet="${1}"
-    local default_port=""
-}
-
 function find_exc {
     local name=${1}
     shift
@@ -69,4 +64,5 @@ alias cntp='sudo ntpdate ca.pool.ntp.org'
 alias mount='sudo mount'
 alias fuh='sudo "$BASH" -c "$(history -p !!)"'
 alias g='git'
+alias tsm="transmission-remote"
 
