@@ -13,13 +13,15 @@ set autoread
 
 " With a map leader it's possible to do extra key combinations
 " like <leader>w saves the current file
-let mapleader = ","
+let mapleader = ","   
 
 " Fast saving
 nmap <leader>w :w!<cr>
 
 " Auto reload .vimrc
-autocmd! BufWritePost .vimrc,*.vim source %
+" ! mark will remove all autocmds before loading this one
+" This way autocmds won't stack on top from prev loads
+autocmd! BufWritePost .vimrc,*.vim source %  
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
@@ -142,7 +144,7 @@ map <Nul> ?
 map <silent> <leader><cr> :noh<cr>
 
 " Vertical split
-map <leader>v :vsp
+map <leader>v :vsp 
 
 " Smart way to move between windows
 map <C-j> <C-W>j
@@ -152,13 +154,13 @@ map <C-l> <C-W>l
 
 " Useful mappings for managing tabs
 nmap <C-c> :tabclose<CR>
-nmap <C-Tab> :tabn<CR>
-nmap <C-S-Tab> :tabp<CR>
+nmap <leader>tn :tabn<CR>
+nmap <leader>tp :tabp<CR>
 nmap <C-t> :tabnew<CR>
 
 " Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
-nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
+nmap <leader>tl :exe "tabn ".g:lasttab<CR>
 au TabLeave * let g:lasttab = tabpagenr()
 
 " Opens a new tab with the current buffer's path
