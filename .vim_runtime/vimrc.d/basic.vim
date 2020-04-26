@@ -77,11 +77,6 @@ set numberwidth=1
 " Enable syntax highlighting
 syntax enable
 
-" Enable 256 colors palette in Gnome Terminal
-"if $COLORTERM == 'gnome-terminal'
-"    set t_Co=256
-"endif
-
 " Show trailing whitespace
 autocmd ColorScheme * highlight ExtraWhitespace ctermbg=red guibg=red
 au InsertLeave * match ExtraWhitespace /\s\+$/
@@ -171,7 +166,20 @@ map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
 " Switch CWD to the directory of the open buffer
 map <leader>cd :cd %:p:h<cr>:pwd<cr>
 
+" Set 0 to go to first non-space character
 map 0 ^
+
+"""""""""""""""""""""""""""""
+" => Editing
+""""""""""""""""""""""""""""
+" Toggle line numbers and fold column for easy copying
+nnoremap <F2> :set nonumber!<CR>:set foldcolumn=0<CR>
+
+" Better copy & paste
+" When you want to paste large blocks of code into vim, press F2 before you
+" paste. At the bottom you should see ``-- INSERT (paste) --``.
+set pastetoggle=<F2>
+set clipboard=unnamed
 
 """"""""""""""""""""""""""""""
 " => Status line
@@ -180,12 +188,10 @@ map 0 ^
 set laststatus=2
 
 " Format the status line
-" set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
+set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
 
 set foldcolumn=1
 
-" Toggle line numbers and fold column for easy copying
-nnoremap <F2> :set nonumber!<CR>:set foldcolumn=0<CR>
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -199,3 +205,5 @@ map <leader>x :vsp ~/buffer.md<cr>
 
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
+
+
