@@ -19,7 +19,7 @@ let mapleader = ","
 nmap <leader>w :w!<cr>
 
 " Auto reload .vimrc
-autocmd! bufwritepost .vimrc source %
+autocmd BufWritePost .vimrc,*.vim source %
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
@@ -220,8 +220,6 @@ set laststatus=2
 
 " Format the status line
 set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
-
-set foldcolumn=1
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
