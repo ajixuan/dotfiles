@@ -18,6 +18,9 @@ let mapleader = ","
 " Fast saving
 nmap <leader>w :w!<cr>
 
+" Auto reload .vimrc
+autocmd! bufwritepost .vimrc source %
+
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
 command W w !sudo tee % > /dev/null
@@ -36,7 +39,7 @@ set wildmenu
 set ruler
 
 " Height of the command bar
-set cmdheight=2
+set cmdheight=1
 
 " A buffer becomes hidden when it is abandoned
 set hid
@@ -193,6 +196,21 @@ endfun
 if has("autocmd")
     autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee :call CleanExtraSpaces()
 endif
+
+" easier moving of code blocks
+" better indentation
+vnoremap < <gv
+vnoremap > >gv
+
+" map sort function to a Ctrl-Down
+vnoremap <C-Down> :sort<CR>
+
+" Bind nohl
+" Removes highlight of your last search
+noremap <C-n> :nohl<CR>
+vnoremap <C-n> :nohl<CR>
+inoremap <C-n> :nohl<CR>
+
 
 """"""""""""""""""""""""""""""
 " => Status line
