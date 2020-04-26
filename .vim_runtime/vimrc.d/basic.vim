@@ -19,7 +19,7 @@ let mapleader = ","
 nmap <leader>w :w!<cr>
 
 " Auto reload .vimrc
-autocmd BufWritePost .vimrc,*.vim source %
+autocmd! BufWritePost .vimrc,*.vim source %
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
@@ -151,11 +151,10 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " Useful mappings for managing tabs
-map <leader>tn :tabnew<cr>
-map <leader>to :tabonly<cr>
-map <leader>tc :tabclose<cr>
-map <leader>tm :tabmove
-map <leader>t<leader> :tabnext<CR>
+nmap <C-c> :tabclose<CR>
+nmap <C-Tab> :tabn<CR>
+nmap <C-S-Tab> :tabp<CR>
+nmap <C-t> :tabnew<CR>
 
 " Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
