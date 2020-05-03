@@ -38,6 +38,32 @@ function find_exc {
     find -name "${name}" -prune ${exclude[@]} -print
 }
 
+####
+# Docker functions
+# Select a docker container to start and attach to
+function da() {
+  local cid
+  cid=$(docker ps -a | sed 1d | fzf -1 --query="$1" | awk '{print $1}')
+
+  [ -n "$cid" ] && docker start "$cid" && docker attach "$cid"
+}
+
+# Select a running docker container to stop
+function ds() {
+  local cid
+  cid=$(docker ps | sed 1d | fzf -q "$1" | awk '{print $1}')
+
+  [ -n "$cid" ] && docker stop "$cid"
+}
+
+# Select a docker container to remove
+function drm() {
+  local cid
+  cid=$(docker ps -a | sed 1d | fzf -q "$1" | awk '{print $1}')
+
+  [ -n "$cid" ] && docker rm "$cid"
+}
+
 start-ssh-agent
 
 # Enviroment variables
@@ -45,6 +71,8 @@ GOPATH=$HOME/go
 PATH=$PATH:$HOME/Projects/ghar/bin
 PATH=$PATH:$HOME/.local/bin
 PATH=$PATH:$GOPATH/bin
+export FZF_CTRL_R_OPTS='--sort --exact'
+export FZF_DEFAULT_OPTS='--height 40% --border'
 
 #Color
 ucolor="\[$(tput setaf 2)\]"
@@ -60,9 +88,19 @@ alias ls="ls --color=auto"
 alias reboot="systemctl reboot"
 alias poweroff="systemctl poweroff"
 alias pup='yes | sudo pacman -Syyu'
-alias cntp='sudo ntpdate ca.pool.ntp.org'
 alias mount='sudo mount'
 alias fuh='sudo "$BASH" -c "$(history -p !!)"'
 alias g='git'
 alias tsm="transmission-remote"
+alias fo='vim $(fzf)'
+
+# Pull ghar files automatically
+if which ghar ; then
+    echo "Installing dotfiles with ghar"
+    if [[ "$(ghar status)" =~ dirty ]]; then
+        ghar pull > /dev/null
+        ghar install > /dev/null
+    fi
+fi
+
 
