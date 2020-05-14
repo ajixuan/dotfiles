@@ -32,10 +32,7 @@ if [ -d /etc/X11/xinit/xinitrc.d ] ; then
  unset f
 fi
 
-#Start internet
-sudo netctl start Linksys11
-
-#Start ssh agent for Github
-eval "$(ssh-agent -s)"
+# Set dvorak as default keyboard
+setxkbmap -layout dvorak &
 
 exec awesome
