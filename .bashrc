@@ -1,18 +1,18 @@
 # Functions
 function start-ssh-agent {
-  local sock_dir="${HOME}/.ssh/ssh_agent.sock"
-  local pid_dir="${HOME}/.ssh/ssh_agent.pid"
+  local sock="${HOME}/.ssh/ssh_agent.sock"
+  local pid="${HOME}/.ssh/ssh_agent.pid"
 
   # Both pid and sock exists
-  if [ -S "${sock_dir}" ] && [ -f "${pid_dir}" ]; then
-    export SSH_AUTH_SOCK="${sock_dir}"
-    export SSH_AGENT_PID="${pid_dir}"
+  if [ -S "${sock}" ] && [ -f "${pid}" ] ; then
+    export SSH_AUTH_SOCK="${sock}"
+    export SSH_AGENT_PID="${pid}"
   else
     echo "Starting ssh-agent"
-    eval "$(ssh-agent -a ${sock_dir})"
-    echo "${SSH_AGENT_PID}" > "${pid_dir}"
+    eval "$(ssh-agent -a ${sock})"
+    echo "${SSH_AGENT_PID}" > "${pid}"
     ssh-add ~/.ssh/*_rsa
-    trap "pkill ssh-agent && rm ${sock_dir} ${pid_dir}" EXIT
+    trap "pkill ssh-agent && rm ${sock} ${pid}" EXIT
   fi
 }
 
