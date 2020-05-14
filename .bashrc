@@ -72,7 +72,7 @@ PATH=$PATH:$HOME/Projects/ghar/bin
 PATH=$PATH:$HOME/.local/bin
 PATH=$PATH:$GOPATH/bin
 export FZF_CTRL_R_OPTS='--sort --exact'
-export FZF_DEFAULT_OPTS='--height 40% --border'
+export FZF_DEFAULT_OPTS='--height 30%'
 
 #Color
 ucolor="\[$(tput setaf 2)\]"
@@ -103,4 +103,5 @@ if which ghar ; then
     fi
 fi
 
-
+#fzf
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
