@@ -73,6 +73,7 @@ PATH=$PATH:$HOME/.local/bin
 PATH=$PATH:$GOPATH/bin
 export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
+export WORKON_HOME="${HOME}/python-virtual-envs/"
 
 #Color
 ucolor="\[$(tput setaf 2)\]"
