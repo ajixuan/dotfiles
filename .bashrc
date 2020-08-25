@@ -24,7 +24,7 @@ function start_vpn {
     ovpn_config="${ovpn_config:-${default_ovpn_config}}"
     echo "Using ovpn config file: \"${ovpn_config}\""
     sudo openvpn "${ovpn_config}"
-    reset
+    [ $? -eq 0 ] && reset
 }
 
 function find_exc {
