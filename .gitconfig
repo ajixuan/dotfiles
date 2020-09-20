@@ -10,3 +10,8 @@
     ci = commit
     ps = push
     pl = pull
+[core]
+	hooksPath = .githooks
+	editor = vim
+[rebase]
+	autosquash = true
