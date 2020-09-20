@@ -1,1 +1,3 @@
 .gitref
+.vim/autoload
+.vim/bundle
