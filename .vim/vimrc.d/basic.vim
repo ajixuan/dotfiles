@@ -199,7 +199,7 @@ vnoremap <C-n> :nohl<CR>
 inoremap <C-n> :nohl<CR>
 
 " Retab lines
-noremap tt :call ResizeTabs()<CR>
+" noremap tt :call ResizeTabs()<CR>
 
 
 """"""""""""""""""""""""""""""
@@ -243,7 +243,7 @@ if has("autocmd")
   autocmd BufWritePre * :call CleanExtraSpaces()
 
   " Retab files
-  " autocmd BufWritePre * :call ResizeTabs()
+  autocmd BufWritePre * :call ResizeTabs()
 endif
 
 
