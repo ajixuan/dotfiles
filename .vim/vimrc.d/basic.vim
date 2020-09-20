@@ -1,3 +1,7 @@
+" Reminder
+" ctrl-o prev cursor
+" ctrl-i next cursor
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -13,15 +17,10 @@ set autoread
 
 " With a map leader it's possible to do extra key combinations
 " like <leader>w saves the current file
-let mapleader = ","   
+let mapleader = ","
 
 " Fast saving
 nmap <leader>w :w!<cr>
-
-" Auto reload .vimrc
-" ! mark will remove all autocmds before loading this one
-" This way autocmds won't stack on top from prev loads
-autocmd! BufWritePost .vimrc,*.vim source %  
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
@@ -79,12 +78,9 @@ set numberwidth=1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors, line visuals and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Enable syntax highlighting
+" Enable custom syntax highlighting
+" syntax on will overwite custom configs and use default
 syntax enable
-
-" Show trailing whitespace
-autocmd ColorScheme * highlight ExtraWhitespace ctermbg=red guibg=red
-au InsertLeave * match ExtraWhitespace /\s\+$/
 
 colorscheme desert
 set background=dark
@@ -97,8 +93,10 @@ set ffs=unix,dos,mac
 
 " Show color column at line 80
 set colorcolumn=80
-highlight ColorColumn ctermbg=blue
 
+" Color groups
+highlight ColorColumn ctermbg=blue
+highlight ExtraWhitespace ctermbg=red guibg=red
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Files, backups and undo
@@ -118,9 +116,9 @@ set expandtab
 " Be smart when using tabs ;)
 set smarttab
 
-" 1 tab == 4 spaces
-set shiftwidth=4
-set tabstop=4
+" 1 tab == 2 spaces
+set shiftwidth=2
+set tabstop=2
 
 " Linebreak on 500 characters
 set lbr
@@ -144,7 +142,7 @@ map <Nul> ?
 map <silent> <leader><cr> :noh<cr>
 
 " Vertical split
-map <leader>v :vsp 
+map <leader>v :vsp
 
 " Smart way to move between windows
 map <C-j> <C-W>j
@@ -185,18 +183,6 @@ nnoremap <F2> :set nonumber!<CR>:set foldcolumn=0<CR>
 set pastetoggle=<F2>
 set clipboard=unnamed
 
-" Delete trailing white space on save, useful for some filetypes ;)
-fun! CleanExtraSpaces()
-    let save_cursor = getpos(".")
-    let old_query = getreg('/')
-    silent! %s/\s\+$//e
-    call setpos('.', save_cursor)
-    call setreg('/', old_query)
-endfun
-
-if has("autocmd")
-    autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee :call CleanExtraSpaces()
-endif
 
 " easier moving of code blocks
 " better indentation
@@ -211,6 +197,9 @@ vnoremap <C-Down> :sort<CR>
 noremap <C-n> :nohl<CR>
 vnoremap <C-n> :nohl<CR>
 inoremap <C-n> :nohl<CR>
+
+" Retab lines
+noremap tt :call ResizeTabs()<CR>
 
 
 """"""""""""""""""""""""""""""
@@ -236,13 +225,51 @@ map <leader>x :vsp ~/buffer.md<cr>
 map <leader>pp :setlocal paste!<cr>
 
 
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Auto commands
+" au = autocmd
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has("autocmd")
+  " Auto reload .vimrc or *.vim ext files
+  " ! mark will remove all autocmds before loading this one
+  " This way autocmds won't stack on top from prev loads
+  autocmd! BufWritePost .vimrc,*.vim source %
+
+  " Show trailing whitespace
+  autocmd InsertLeave * match ExtraWhitespace /\s\+$/
+
+  " Clean traling whitespace
+  autocmd BufWritePre * :call CleanExtraSpaces()
+
+  " Retab files
+  " autocmd BufWritePre * :call ResizeTabs()
+endif
+
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Returns true if paste mode is enabled
 function! HasPaste()
-    if &paste
-        return 'PASTE MODE  '
-    endif
-    return ''
+  if &paste
+  return 'PASTE MODE  '
+  endif
+  return ''
 endfunction
+
+" Delete trailing white space on save, useful for some filetypes ;)
+fun! CleanExtraSpaces()
+  let save_cursor = getpos(".")
+  let old_query = getreg('/')
+  silent! %s/\s\+$//e
+  call setpos('.', save_cursor)
+  call setreg('/', old_query)
+endfun
+
+fun! ResizeTabs()
+  let save_cursor = getpos(".")
+  %s/^\s\{4}/  /e
+  call setpos('.', save_cursor)
+endfun
+
