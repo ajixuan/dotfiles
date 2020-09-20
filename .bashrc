@@ -104,5 +104,8 @@ if which ghar ; then
     fi
 fi
 
+. "${HOME}/.local/bin/virtualenvwrapper.sh"
+
+
 #fzf
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
