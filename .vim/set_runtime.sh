@@ -8,6 +8,7 @@ nerdtree_url='https://github.com/preservim/nerdtree.git'
 
 mkdir -p "${script_dir}/autoload"
 mkdir -p "${script_dir}/bundle"
+mkdir -p "${script_dir}/syntax"
 
 # Get Pathogen
 curl -LSso "${script_dir}/autoload/pathogen.vim" "${pathogen_url}"
