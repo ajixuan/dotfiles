@@ -141,9 +141,6 @@ map <Nul> ?
 " Disable highlight when <leader><cr> is pressed
 map <silent> <leader><cr> :noh<cr>
 
-" Vertical split
-map <leader>v :vsp
-
 " Smart way to move between windows
 map <C-j> <C-W>j
 map <C-k> <C-W>k
