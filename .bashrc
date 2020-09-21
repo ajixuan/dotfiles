@@ -3,6 +3,7 @@
 GOPATH=$HOME/go
 PATH=$PATH:$HOME/Projects/ghar/bin
 PATH=$PATH:$HOME/.local/bin
+PATH=$PATH:$HOME/bin
 PATH=$PATH:$GOPATH/bin
 export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
