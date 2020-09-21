@@ -147,6 +147,15 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
+" Smart way to move windows around
+nnoremap <C-r> <C-W>r
+
+" Quick resize windows
+nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 3/2)<CR>
+nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 2/3)<CR>
+nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 3/2)<CR>
+nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 2/3)<CR>
+
 " Useful mappings for managing tabs
 nmap <C-c> :tabclose<CR>
 nmap <leader>tn :tabn<CR>
@@ -170,6 +179,7 @@ map 0 ^
 
 " Always split to right
 set splitright
+
 
 """""""""""""""""""""""""""""
 " => Editing
@@ -223,7 +233,6 @@ map <leader>x :vsp ~/buffer.md<cr>
 
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
-
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
