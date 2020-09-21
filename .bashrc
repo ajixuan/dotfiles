@@ -9,12 +9,12 @@ export FZF_DEFAULT_OPTS='--height 30%'
 export WORKON_HOME="${HOME}/python-virtual-envs/"
 
 # Pull ghar files automatically
-if which ghar ; then
-    if [[ "$(ghar status)" =~ dirty ]]; then
-        echo "New dotfile changes found, installing dotfiles"
-        ghar pull > /dev/null
-        ghar install > /dev/null
-    fi
+if which ghar > /dev/null ; then
+  if [[ "$(ghar status)" =~ dirty ]]; then
+      echo "New dotfile changes found, installing dotfiles"
+      ghar pull > /dev/null
+      ghar install > /dev/null
+  fi
 fi
 
 # Import Functions
