@@ -252,7 +252,7 @@ if has("autocmd")
   autocmd BufWritePre * :call CleanExtraSpaces()
 
   " Retab files
-  autocmd BufWritePre * :call ResizeTabs()
+  "autocmd BufWritePre * :call ResizeTabs()
 endif
 
 
