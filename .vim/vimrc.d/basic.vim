@@ -168,6 +168,9 @@ map <leader>cd :cd %:p:h<cr>:pwd<cr>
 " Set 0 to go to first non-space character
 map 0 ^
 
+" Always split to right
+set splitright
+
 """""""""""""""""""""""""""""
 " => Editing
 """"""""""""""""""""""""""""
