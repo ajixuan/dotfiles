@@ -1,3 +1,4 @@
 .gitref
 .vim/autoload
 .vim/bundle
+.aws/credentials
