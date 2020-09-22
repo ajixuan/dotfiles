@@ -41,8 +41,9 @@ while IFS= read -r -d '' script; do
   . "${script}"
 done
 
+
 # Source python virtualenvwrapper
-[ -n "${VIRTUALENV_WRAPPER_PATH:-}" ] && . "${VIRTUALENV_WRAPPER_PATH}"
+[ -f "${VIRTUALENV_WRAPPER_PATH:-}" ] && . "${VIRTUALENV_WRAPPER_PATH}"
 
 # Start ssh-agent
 start-ssh-agent

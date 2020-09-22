@@ -24,7 +24,7 @@ nmap <leader>w :w!<cr>
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
-command W w !sudo tee % > /dev/null
+command! W w !sudo tee % > /dev/null
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -147,8 +147,8 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
-" Smart way to move windows around
-nnoremap <C-r> <C-W>r
+" Stupid way to move windows around
+"nnoremap <C-r> <C-W>r
 
 " Quick resize windows
 nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 3/2)<CR>
