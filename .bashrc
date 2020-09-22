@@ -36,11 +36,9 @@ fi
 # Source additional scripts
 # Run additional bashrc scipts
 # Only execute additional .bashrc scripts if they are secure
-find "${HOME}/.bashrc.d/" -type f -perm -g-xw,o-xw -user "${USER}" -print0 |
 while IFS= read -r -d '' script; do
   . "${script}"
-done
-
+done < <(find "${HOME}/.bashrc.d/" -type f -perm -g-xw,o-xw -user "${USER}" -print0)
 
 # Source python virtualenvwrapper
 [ -f "${VIRTUALENV_WRAPPER_PATH:-}" ] && . "${VIRTUALENV_WRAPPER_PATH}"
