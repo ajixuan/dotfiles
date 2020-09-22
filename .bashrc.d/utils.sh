@@ -1,4 +1,6 @@
 #!/bin/bash
+# handy functions on the command line
+
 function start-ssh-agent {
   local sock="${HOME}/.ssh/ssh_agent.sock"
   local pid="${HOME}/.ssh/ssh_agent.pid"

@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Enviroment variables
 GOPATH=$HOME/go
 PATH=$PATH:$HOME/Projects/ghar/bin
@@ -8,7 +9,7 @@ PATH=$PATH:$GOPATH/bin
 export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
 export WORKON_HOME="${HOME}/python-virtual-envs/"
-
+export VIRTUALENV_WRAPPER_PATH="${HOME}/.local/bin/virtualenvwrapper.sh"
 # Pull ghar files automatically
 if which ghar > /dev/null ; then
   if [[ "$(ghar status)" =~ dirty ]]; then
@@ -18,8 +19,30 @@ if which ghar > /dev/null ; then
   fi
 fi
 
-# Import Functions
-. "${HOME}/.bashrc.d/utils.sh"
+FULL_NAME="Allen Ji"
+EMAIL="ajixuan11@gmail.com"
+GIT_BASE="${HOME}/Projects"
+
+# Git config
+if which git > /dev/null ; then
+    git config --global user.name "${FULL_NAME}"
+    git config --global user.email "${EMAIL}"
+    git config --global credential.helper cache # Set git to use the credential memory cache
+    git config --global credential.helper 'cache --timeout=3600' # Set the cache to timeout after 1 hour (setting is in seconds)
+    git config --global core.editor vim
+    git config --global push.default matching
+fi
+
+# Source additional scripts
+# Run additional bashrc scipts
+# Only execute additional .bashrc scripts if they are secure
+find "${HOME}/.bashrc.d/" -type f -perm -g-xw,o-xw -user "${USER}" -print0 |
+while IFS= read -r -d '' script; do
+  . "${script}"
+done
+
+# Source python virtualenvwrapper
+[ -n "${VIRTUALENV_WRAPPER_PATH:-}" ] && . "${VIRTUALENV_WRAPPER_PATH}"
 
 # Start ssh-agent
 start-ssh-agent
@@ -42,9 +65,8 @@ alias mount='sudo mount'
 alias fuh='sudo "$BASH" -c "$(history -p !!)"'
 alias g='git'
 alias tsm="transmission-remote"
-alias fo='vim $(fzf)'
-
-. "${HOME}/.local/bin/virtualenvwrapper.sh"
+alias k="kubectl"
+alias dang='docker rmi $(docker images -f "dangling=true" -q)'
 
 #fzf
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
