@@ -53,7 +53,7 @@ reset="\[$(tput sgr0)\]"
 PS1="${pcolor}[\@ ${ucolor}\\u@\\h${pcolor} \\W]\$ "
 
 #Aliases
-alias vi="vim"
+alias vi="nvim"
 alias grep="grep -Ei"
 alias ll="ls -ltrah --color=auto"
 alias ls="ls --color=auto"
