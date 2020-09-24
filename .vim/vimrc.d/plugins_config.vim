@@ -141,8 +141,8 @@ nnoremap <silent> <leader>d :GitGutterToggle<cr>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => FZF
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-noremap <C-p> :call fzf#run({'source': 'git ls-files', 'sink': 'vsp', 'down': '10%'})<CR>
-noremap <S-p> :call fzf#run({'source': 'git ls-files', 'sink': 'split', 'down': '10%'})<CR>
+noremap <C-p> :call fzf#run({'source': 'git ls-files', 'sink': 'vsp', 'down': '15%'})<CR>
+noremap <S-p> :call fzf#run({'source': 'git ls-files', 'sink': 'e', 'down': '15%'})<CR>
 
 
 
