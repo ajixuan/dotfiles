@@ -33,6 +33,18 @@ if which git > /dev/null ; then
     git config --global push.default matching
 fi
 
+#git autocomplete
+if [ -f ${HOME}/.git-completion.bash ]; then
+  . ${HOME}/.git-completion.bash
+
+  # Add git completion to aliases
+  __git_complete g __git
+  #__git_complete "g co" _git_checkout
+  #__git_complete "g pl" _git_pull
+
+fi
+
+
 # Source additional scripts
 # Run additional bashrc scipts
 # Only execute additional .bashrc scripts if they are secure
