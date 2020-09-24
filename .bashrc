@@ -56,10 +56,12 @@ done < <(find "${HOME}/.bashrc.d/" -type f -perm -g-xw,o-xw -user "${USER}" -pri
 start-ssh-agent
 
 #Color
-ucolor="\[$(tput setaf 2)\]"
-pcolor="\[$(tput setaf 6)\]"
-reset="\[$(tput sgr0)\]"
-PS1="${pcolor}[\@ ${ucolor}\\u@\\h${pcolor} \\W]\$ "
+if [[ $- == *i* ]]; then
+  ucolor="\[$(tput setaf 2)\]"
+  pcolor="\[$(tput setaf 6)\]"
+  reset="\[$(tput sgr0)\]"
+  PS1="${pcolor}[\@ ${ucolor}\\u@\\h${pcolor} \\w]\$ "
+fi
 
 #Aliases
 alias vi="nvim"
