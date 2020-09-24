@@ -38,10 +38,7 @@ if [ -f ${HOME}/.git-completion.bash ]; then
   . ${HOME}/.git-completion.bash
 
   # Add git completion to aliases
-  __git_complete g __git
-  #__git_complete "g co" _git_checkout
-  #__git_complete "g pl" _git_pull
-
+  __git_complete g _git
 fi
 
 
