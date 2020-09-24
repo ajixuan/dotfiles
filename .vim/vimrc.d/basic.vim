@@ -29,6 +29,12 @@ command! W w !sudo tee % > /dev/null
 " Work around CVE-2019-12735.
 set nomodeline
 
+" Short cut for running ! commands
+map <leader>e :!
+
+" Fast saving
+nmap <leader>w :w!<cr>
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -129,7 +135,6 @@ set tw=79
 set ai "Auto indent
 set si "Smart indent
 set nowrap
-" set wrap
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -212,7 +217,6 @@ inoremap <C-n> :nohl<CR>
 
 " Retab lines
 " noremap tt :call ResizeTabs()<CR>
-
 
 """"""""""""""""""""""""""""""
 " => Status line
