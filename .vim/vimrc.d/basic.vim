@@ -41,12 +41,6 @@ nmap <leader>w :w!<cr>
 " Set 3 lines to the cursor - when moving vertically using j/k
 set so=3
 
-" Turn on the Wild menu
-set wildmenu
-
-"Always show current position
-set ruler
-
 " Height of the command bar
 set cmdheight=1
 
@@ -79,9 +73,15 @@ set showmatch
 " How many tenths of a second to blink when matching brackets
 set mat=2
 
-" Show line numbers
-set number
+" line numbers
+set relativenumber
 set numberwidth=1
+augroup numbertoggle
+  autocmd!
+  autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
+  autocmd BufLeave,FocusLost,InsertEnter   * set norelativenumber
+augroup END
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors, line visuals and Fonts
@@ -113,7 +113,6 @@ highlight ExtraWhitespace ctermbg=red guibg=red
 set nobackup
 set nowb
 set noswapfile
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Text, tab and indent related
