@@ -153,14 +153,16 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
-" Stupid way to move windows around
-"nnoremap <C-r> <C-W>r
 
 " Quick resize windows
-nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 3/2)<CR>
-nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 2/3)<CR>
+nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/3)<CR>
+nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 3/2)<CR>
 nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 3/2)<CR>
 nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 2/3)<CR>
+
+" VSP and SP
+map <leader>v :vsp<CR>
+map <leader>s :sp<CR>
 
 " Useful mappings for managing tabs
 nmap <C-c> :tabclose<CR>
@@ -198,7 +200,6 @@ nnoremap <F2> :set number!<CR>:set relativenumber!<CR>:set foldcolumn=0<CR>
 " paste. At the bottom you should see ``-- INSERT (paste) --``.
 set pastetoggle=<F2>
 set clipboard=unnamed
-
 
 " easier moving of code blocks
 " better indentation
