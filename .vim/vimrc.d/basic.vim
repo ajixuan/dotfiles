@@ -74,12 +74,12 @@ set showmatch
 set mat=2
 
 " line numbers
-set relativenumber
+set number relativenumber
 set numberwidth=1
 augroup numbertoggle
   autocmd!
-  autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
-  autocmd BufLeave,FocusLost,InsertEnter   * set norelativenumber
+  autocmd BufEnter,FocusGained,InsertLeave * set number relativenumber
+  autocmd BufLeave,FocusLost,InsertEnter   * set nonumber norelativenumber
 augroup END
 
 
@@ -191,7 +191,7 @@ set splitright
 " => Editing
 """"""""""""""""""""""""""""
 " Toggle line numbers and fold column for easy copying
-nnoremap <F2> :set nonumber!<CR>:set nornu!<CR>:set foldcolumn=0<CR>
+nnoremap <F2> :set number!<CR>:set relativenumber!<CR>:set foldcolumn=0<CR>
 
 " Better copy & paste
 " When you want to paste large blocks of code into vim, press F2 before you
