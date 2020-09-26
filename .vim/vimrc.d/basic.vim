@@ -38,8 +38,8 @@ nmap <leader>w :w!<cr>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Set 5 lines to the cursor - when moving vertically using j/k
-set so=5
+" Set 3 lines to the cursor - when moving vertically using j/k
+set so=3
 
 " Turn on the Wild menu
 set wildmenu
