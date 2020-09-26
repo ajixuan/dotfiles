@@ -187,11 +187,11 @@ map 0 ^
 set splitright
 
 
-"""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""
 " => Editing
 """"""""""""""""""""""""""""
 " Toggle line numbers and fold column for easy copying
-nnoremap <F2> :set nonumber!<CR>:set foldcolumn=0<CR>
+nnoremap <F2> :set nonumber!<CR>:set nornu!<CR>:set foldcolumn=0<CR>
 
 " Better copy & paste
 " When you want to paste large blocks of code into vim, press F2 before you
