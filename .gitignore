@@ -2,3 +2,4 @@
 .vim/autoload
 .vim/bundle
 .aws/credentials
+.vim/plugged
