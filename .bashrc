@@ -12,10 +12,15 @@ export WORKON_HOME="${HOME}/python-virtual-envs/"
 export VIRTUALENV_WRAPPER_PATH="${HOME}/.local/bin/virtualenvwrapper.sh"
 # Pull ghar files automatically
 if which ghar > /dev/null ; then
+  days_since=$(( $(date +%s) - $(git log -1 --date=unix --format=%cd) / 3600 / 24))
+  if [ $(( ${days_since} % 31 )) -eq 0  ]; then
+    echo "Monthly dotfile pull"
+    ghar pull > /dev/null
+  fi
+
   if [[ "$(ghar status)" =~ dirty ]]; then
-  echo "New dotfile changes found, installing dotfiles"
-  ghar pull > /dev/null
-  ghar install > /dev/null
+    echo "New dotfile changes found, installing dotfiles"
+    ghar install > /dev/null
   fi
 fi
 
