@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Enviroment variables
+# Environment variables
 GOPATH=$HOME/go
 PATH=$PATH:$HOME/Projects/ghar/bin
 PATH=$PATH:$HOME/.local/bin
