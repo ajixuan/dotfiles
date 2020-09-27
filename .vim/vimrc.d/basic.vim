@@ -106,6 +106,7 @@ set colorcolumn=80
 highlight ColorColumn ctermbg=blue
 highlight ExtraWhitespace ctermbg=red guibg=red
 
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Files, backups and undo
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -113,6 +114,7 @@ highlight ExtraWhitespace ctermbg=red guibg=red
 set nobackup
 set nowb
 set noswapfile
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Text, tab and indent related
@@ -152,7 +154,6 @@ map <C-j> <C-W>j
 map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
-
 
 " Quick resize windows
 nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/3)<CR>
@@ -217,6 +218,10 @@ noremap <C-n> :nohl<CR>
 
 " Retab lines
 " noremap tt :call ResizeTabs()<CR>
+
+" Yank to clipboard-
+vnoremap <leader>y ",y<CR>
+
 
 """"""""""""""""""""""""""""""
 " => Status line
