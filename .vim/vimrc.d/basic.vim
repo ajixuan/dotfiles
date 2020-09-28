@@ -220,7 +220,7 @@ noremap <C-n> :nohl<CR>
 " noremap tt :call ResizeTabs()<CR>
 
 " Yank to clipboard-
-vnoremap <leader>y ",y<CR>
+vnoremap <leader>y "*y<CR>
 
 
 """"""""""""""""""""""""""""""
