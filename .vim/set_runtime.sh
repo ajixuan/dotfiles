@@ -13,10 +13,10 @@ mkdir -p "${script_dir}/syntax"
 
 # Get Plug
 if [ ! -f "${script_dir}/autoload/plug.vim" ]; then
-  curls "${plug_url}" "${script_dir}/autoload/plug.vim"
+  curl -fsSL "${plug_url}" --create-dirs -o "${script_dir}/autoload/plug.vim"
 fi
 
 if ${build}; then
-  . "${script_dir}/build_env.sh"
+  echo "Building deps"
   BUILD_DIR="${HOME}/tmp/local" . "${script_dir}/build.sh"
 fi
