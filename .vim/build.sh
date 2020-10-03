@@ -9,14 +9,17 @@ PATH="${PATH}:${build_dir}/bin"
 
 mkdir -p "${build_dir}"
 
+###############
+# Helpers
 function std_build {
   local _pkg_name="${1}"
-  local _prefix="${2}"
+  local _extra_config_flags=(${2:-})
+  local _prefix="${BUILD_DIR:-${build_dir}}"
 
   ( cd "${tmp_dir}/${_pkg_name}"  && \
     tar xvf ${_pkg_name}.tar.gz    && \
     cd ${_pkg_name}-*/             && \
-    ./configure --prefix=${_prefix} && \
+    ./configure --prefix=${_prefix} ${_extra_config_flags[@]} && \
     make && make install )
 }
 
@@ -43,50 +46,38 @@ function curls {
   fi
 }
 
-# build autoconf
-if ! which autoconf >/dev/null; then
-  curls "${autoconf_url}" "${tmp_dir}/autoconf/autoconf.tar.gz"
-  ( cd "${tmp_dir}/autoconf" && \
-    tar xvf autoconf.tar.gz   && \
-    cd autoconf-*/            && \
-    ./configure --prefix=${build_dir} && \
-    make && make install )
-fi
+##########################
+# Build deps
 
-# build automake
-if ! which aclocal >/dev/null; then
-  curls "${automake_url}" "${tmp_dir}/automake/automake.tar.gz"
-  ( cd "${tmp_dir}/automake"  && \
-    tar xvf automake.tar.gz    && \
-    cd automake-*/             && \
-    ./configure --prefix=${build_dir} && \
-    make && make install )
-fi
+if ${build_deps}; then
+  # build autoconf
+  if ! which autoconf >/dev/null; then
+    curls "${autoconf_url}" "${tmp_dir}/autoconf/autoconf.tar.gz"
+    std_build 'autoconf'
+  fi
 
-# build pkg-config
-if ! which pkg-config >/dev/null; then
-  curls "${pkgconfig_url}" "${tmp_dir}/pkgconfig/pkgconfig.tar.gz"
-  ( cd "${tmp_dir}/pkgconfig"  && \
-    tar xvf pkgconfig.tar.gz    && \
-    cd pkg-config-*/             && \
-    ./configure --prefix=${build_dir} && \
-    make && make install )
-fi
+  # build automake
+  if ! which aclocal 2>&1 >/dev/null; then
+    curls "${automake_url}" "${tmp_dir}/automake/automake.tar.gz"
+    std_build 'automake'
+  fi
 
-# build bison
-# curls "${bison_url}" "${tmp_dir}/bison/bison.tar.gz"
-# ( cd "${tmp_dir}/bison"  && \
-#   tar xvf bison.tar.gz    && \
-#   cd bison-*/             && \
-#   ./configure --prefix=${build_dir} && \
-#   make && make install )
+  # build pkg-config
+  if ! which pkg-config 2>&1 >/dev/null; then
+    curls "${pkgconfig_url}" "${tmp_dir}/pkg-config/pkg-config.tar.gz"
+    std_build 'pkg-config'
+  fi
+
+  # build bison
+  # curls "${bison_url}" "${tmp_dir}/bison/bison.tar.gz"
+  # std_build 'bison'
+fi
 
 # build ripgrep
-if ! which rg > /dev/null ; then
+if ! which rg 2>&1 > /dev/null ; then
   if ! which cargo > /dev/null; then
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
-    sed -i '/^\# Environment variables/a PATH=\$PATH:\$HOME\/.cargo\/bin' \
-    "${HOME}/.bashrc"
+    sed -i '/^\# Environment variables/a PATH=\$PATH:\$HOME\/.cargo\/bin' "${HOME}/.bashrc"
   fi
 
   git clone "${ripgrep_url}" "${tmp_dir}/ripgrep"
@@ -96,17 +87,11 @@ if ! which rg > /dev/null ; then
 fi
 
 # build tmux
-if ! which tmux > /dev/null ; then
+if ! which tmux 2>&1 > /dev/null ; then
   # build libevent
   if [ ! -f ${build_dir}/lib/libevent.a ]; then
     curls "${libevent_url}" "${tmp_dir}/libevent/libevent.tar.gz"
-    # Can't find public key
-    #  "${libevent_asc}"
-    ( cd "${tmp_dir}/libevent"   && \
-      tar xvf ./libevent.tar.gz    && \
-      cd libevent-*/              && \
-      ./configure --prefix=${build_dir} --enable-shared && \
-      make && make install )
+    std_build 'libevent' "--enable-shared"
   fi
 
   # build ncurses
@@ -114,12 +99,9 @@ if ! which tmux > /dev/null ; then
     curls "${ncurses_url}" "${tmp_dir}/ncurses/ncurses.tar.gz" \
       "${ncureses_asc}" \
       'https://invisible-island.net/public/dickey-invisible-island.txt'
-    ( cd "${tmp_dir}/ncurses"  && \
-      tar xvf ./ncurses.tar.gz     && \
-      cd ncurses-*/               && \
-      ./configure --prefix=${build_dir} --with-shared --with-termlib \
-      --enable-pc-files --with-pkg-config-libdir=${build_dir}/lib/pkgconfig && \
-      make && make install )
+      std_build 'ncurses' \
+        "--with-shared --with-termlib --enable-pc-files \
+         --with-pkg-config-libdir=${build_dir}/lib/pkgconfig"
   fi
 
   # build tmux
@@ -128,8 +110,9 @@ if ! which tmux > /dev/null ; then
     ( cd "${tmp_dir}/tmux"   && \
         tar xvf ./tmux.tar.gz && \
         cd tmux-*/            && \
-        LDFLAGS=${build_dir}/lib
-        ACLOCAL_PATH=${build_dir}/share/aclocal ./autogen.sh
+        LDFLAGS=${build_dir}/lib \
+        ACLOCAL_PATH=${build_dir}/share/aclocal \
+        ./autogen.sh && \
         PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
           ./configure --enable-static --prefix=${build_dir}  && \
         make && make install)
@@ -137,7 +120,7 @@ if ! which tmux > /dev/null ; then
 fi
 
 # ctags
-if ! which ctags > /dev/null ; then
+if ! which ctags 2>&1 > /dev/null ; then
   git clone "${ctags_url}" "${tmp_dir}/ctags"
   ( cd "${tmp_dir}" && \
       "./autogen.sh" && \
