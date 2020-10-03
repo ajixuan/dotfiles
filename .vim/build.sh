@@ -14,12 +14,11 @@ mkdir -p "${build_dir}"
 function std_build {
   local _pkg_name="${1}"
   local _extra_config_flags=(${2:-})
-  local _prefix="${BUILD_DIR:-${build_dir}}"
 
   ( cd "${tmp_dir}/${_pkg_name}"  && \
     tar xvf ${_pkg_name}.tar.gz    && \
     cd ${_pkg_name}-*/             && \
-    ./configure --prefix=${_prefix} ${_extra_config_flags[@]} && \
+    ./configure --prefix=${build_dir} ${_extra_config_flags[@]} && \
     make && make install )
 }
 
@@ -111,10 +110,10 @@ if ! which tmux 2>&1 > /dev/null ; then
         tar xvf ./tmux.tar.gz && \
         cd tmux-*/            && \
         LDFLAGS=${build_dir}/lib \
-        ACLOCAL_PATH=${build_dir}/share/aclocal \
+        ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
         ./autogen.sh && \
         PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
-          ./configure --enable-static --prefix=${build_dir}  && \
+        ./configure --enable-static --prefix=${build_dir}  && \
         make && make install)
   fi
 fi
