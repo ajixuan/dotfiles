@@ -1,6 +1,7 @@
 #!/bin/bash
 
 . "${script_dir}/build_env.sh"
+build_deps="${BUILD_DEPS:-true}"
 static="${STATIC:-true}"
 tmp_dir="${TMP_DIR:-${HOME}/tmp}"
 build_dir="${BUILD_DIR:-/usr/local}"
@@ -95,12 +96,10 @@ if ! which tmux 2>&1 > /dev/null ; then
 
   # build ncurses
   if [ ! -f ${build_dir}/lib/libncurses.a ]; then
-    curls "${ncurses_url}" "${tmp_dir}/ncurses/ncurses.tar.gz" \
-      "${ncureses_asc}" \
-      'https://invisible-island.net/public/dickey-invisible-island.txt'
-      std_build 'ncurses' \
-        "--with-shared --with-termlib --enable-pc-files \
-         --with-pkg-config-libdir=${build_dir}/lib/pkgconfig"
+    curls "${ncurses_url}" "${tmp_dir}/ncurses/ncurses.tar.gz" "${ncureses_asc}" \
+    'https://invisible-island.net/public/dickey-invisible-island.txt'
+    std_build 'ncurses' "--with-shared --with-termlib --enable-pc-files \
+                        --with-pkg-config-libdir=${build_dir}/lib/pkgconfig"
   fi
 
   # build tmux
@@ -112,7 +111,7 @@ if ! which tmux 2>&1 > /dev/null ; then
         LDFLAGS=${build_dir}/lib \
         ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
         ./autogen.sh && \
-        PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
+        #PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
         ./configure --enable-static --prefix=${build_dir}  && \
         make && make install)
   fi
