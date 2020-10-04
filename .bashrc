@@ -12,7 +12,8 @@ export WORKON_HOME="${HOME}/python-virtual-envs/"
 export VIRTUALENV_WRAPPER_PATH="${HOME}/.local/bin/virtualenvwrapper.sh"
 # Pull ghar files automatically
 if which ghar > /dev/null ; then
-  days_since=$(( $(date +%s) - $(git log -1 --date=unix --format=%cd) / 3600 / 24))
+  dotfiles_dir="$(dirname $(readlink ${BASH_SOURCE[0]}))"
+  days_since=$(( $(date +%s) - $(git --git-dir "${dotfiles_dir}/.git" log -1 --date=unix --format=%cd) / 3600 / 24))
   if [ $(( ${days_since} % 31 )) -eq 0  ]; then
     echo "Monthly dotfile pull"
     ghar pull > /dev/null
@@ -32,10 +33,6 @@ GIT_BASE="${HOME}/Projects"
 if which git > /dev/null ; then
     git config --global user.name "${FULL_NAME}"
     git config --global user.email "${EMAIL}"
-    git config --global credential.helper cache # Set git to use the credential memory cache
-    git config --global credential.helper 'cache --timeout=3600' # Set the cache to timeout after 1 hour (setting is in seconds)
-    git config --global core.editor vim
-    git config --global push.default matching
 fi
 
 #git autocomplete
