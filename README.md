@@ -1,5 +1,8 @@
 # dotfiles
 My dotfiles
 
-## Vim
-* install with pathogen
+## nvim
+* install plugins with plug
+
+## tmux
+
