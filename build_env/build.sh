@@ -3,7 +3,7 @@
 . "${script_dir}/build_env.sh"
 build_deps="${BUILD_DEPS:-true}"
 static="${STATIC:-true}"
-tmp_dir="${TMP_DIR:-${HOME}/tmp}"
+tmp_dir="${TMP_DIR:-/tmp/dotfiles}"
 build_dir="${BUILD_DIR:-/usr/local}"
 orig_path="${PATH}"
 PATH="${PATH}:${build_dir}/bin"
@@ -65,7 +65,7 @@ if ${build_deps}; then
   # build pkg-config
   if ! which pkg-config 2>&1 >/dev/null; then
     curls "${pkgconfig_url}" "${tmp_dir}/pkg-config/pkg-config.tar.gz"
-    std_build 'pkg-config'
+    std_build 'pkg-config' '--with-internal-glib'
   fi
 
   # build bison
