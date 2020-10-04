@@ -35,7 +35,10 @@ if which git > /dev/null ; then
     git config --global user.email "${EMAIL}"
 fi
 
-#git autocomplete
+# git autocomplete
+# Install .git-completion.bash from
+# https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash
+# if does not exist in $HOME
 if [ -f ${HOME}/.git-completion.bash ]; then
   . ${HOME}/.git-completion.bash
 
