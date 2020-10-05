@@ -2,7 +2,9 @@
 My dotfiles
 
 ## nvim
-* install plugins with plug
+* install nvim
+* install plugins with :PlugInstall
 
 ## tmux
+mv compiled tmux to $HOME/bin
 
