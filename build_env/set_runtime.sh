@@ -2,7 +2,8 @@
 set -e
 
 # vars
-build=${BUILD:-true}
+export build=${BUILD:-true}
+export BUILD_DIR=${BUILD_DIR:-${HOME}/tmp/local}
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 plug_url='https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
 
@@ -18,5 +19,5 @@ fi
 
 if ${build}; then
   echo "Building deps"
-  BUILD_DIR="${HOME}/tmp/local" . "${script_dir}/build.sh"
+  . "${script_dir}/build.sh"
 fi

@@ -48,6 +48,14 @@ function curls {
 
 ##########################
 # Build deps
+if ! which nvim 2>&1 ; then
+  curls "${nvim_url}" "${tmp_dir}/nvim/nvim.tar.gz"
+  ( cd "${tmp_dir}/nvim/" && \
+    tar xvf "nvim.tar.gz" && \
+    cd nvim-*  && \
+    mv ./bin/nvim "${build_dir}/bin/" && \
+    cp --no-clobber -R ./share/* "${build_dir}/share/" )
+fi
 
 if ${build_deps}; then
   # build autoconf
