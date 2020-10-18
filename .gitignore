@@ -3,5 +3,4 @@
 .vim/bundle
 .aws/credentials
 .vim/plugged
-.vim/.netrwhist
-
+.config/nvim/.netrwhist
