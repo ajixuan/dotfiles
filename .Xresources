@@ -1,36 +1,24 @@
 !! Appearance
-urxvt.termName: rxvt-256color
-urxvt.scrollBar: false
-urxvt.background: black
-urxvt.foreground: gray
+URxvt.termName: rxvt-256color
+URxvt.scrollBar: false
+URxvt.background: black
+URxvt.foreground: gray
+
 !! Font prefferenes
-urxvt.font: xft:DejaVu Sans Mono:pixelsize=13, \
+URxvt.font: xft:DejaVu Sans Mono:pixelsize=13, \
           xft:WenQuanYi Bitmap Song:size=8, \
           xft:FreeSerif:style=Regular, \
           xft:unifont:style=Medium:antialias=false
-urxvt.boldFont: xft:DejaVu Sans Mono:pixelsize=13:weight=bold
-urxvt.letterSpace: -1
+URxvt.boldFont: xft:DejaVu Sans Mono:pixelsize=13:weight=bold
+URxvt.letterSpace: -1
+
 !! Larger history limit
-urxvt.saveLines: 1000000
+URxvt.saveLines: 1000000
 
 !! Perl extensions
-urxvt.perl-ext-common: default,matcher,font-size,resize-font,clipboard
-!! Open urls in browser with Control-Click
-urxvt.urlLauncher: /usr/bin/firefox
-urxvt.matcher.button: C1
-
-!! Yeah, I am one of those, who use these keys in Vim :-(
-urxvt.keysym.Home:          \033[1~
-urxvt.keysym.End:           \033[4~
-urxvt.keysym.Control-Up:    \033[1;5A
-urxvt.keysym.Control-Down:  \033[1;5B
-urxvt.keysym.Control-Left:  \033[1;5D
-urxvt.keysym.Control-Right: \033[1;5C
-!! Vim ctrl-shift bindings
-!!urxvt.keysym.Control-Shift-j: \033H
-!!urxvt.keysym.Control-Shift-k: \033K
-!!urxvt.keysym.Control-Shift-h: \033H
-!!urxvt.keysym.Control-Shift-l: \033L
+! URxvt.perl-ext-common: default,matcher,font-size,resize-font
+URxvt.perl-ext:
+URxvt.perl-ext-common:
 
 !! Tango color theme
 !! Strange - it matches tango from gnome-terminal, but looks different
@@ -53,12 +41,25 @@ URxvt.color15: rgb:EE/EE/EC
 URxvt.colorBD: rgb:ff/ff/ff
 
 !! Transparent terminal
-urxvt*transparent: true
+URxvt*transparent: true
 URxvt*shading: 10
 URxvt*inheritPixmap: true
 
-!! Clipboard
-URxvt.clipboard.autocopy: true
-
 !! Fix alt key
-urxvt.metaSendEscape: true
+URxvt.metaSendEscape: false
+
+! do not scroll with output
+URxvt*scrollTtyOutput: false
+
+! scroll in relation to buffer (with mouse scroll or Shift+Page Up)
+URxvt*scrollWithBuffer: true
+
+! scroll back to the bottom on keypress
+URxvt*scrollTtyKeypress: true
+
+! Disable ctrl-alt copy paste
+!URxvt.keysym.Shift-Control-V: eval:paste_clipboard
+!URxvt.keysym.Shift-Control-C: eval:selection_to_clipboard
+URxvt.keysym.Control-Meta-c: builtin-string:
+URxvt.keysym.Control-Meta-v: builtin-string:
+
