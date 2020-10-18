@@ -213,8 +213,8 @@ vnoremap <C-Down> :sort<CR>
 " Bind nohl
 " Removes highlight of your last search
 noremap <C-n> :nohl<CR>
-"vnoremap <C-n> :nohl<CR>
-"inoremap <C-n> :nohl<CR>
+vnoremap <C-n> :nohl<CR>
+inoremap <C-n> :nohl<CR>
 
 " Retab lines
 " noremap tt :call ResizeTabs()<CR>
