@@ -2,11 +2,11 @@
 	name = Allen Ji
 	email = ajixuan11@gmail.com
 [alias]
-    a = add
+    a = add -p
     r = reset
     st = status
     br = branch
-	co = checkout
+  	co = checkout
     ci = commit
     ps = push
     pl = pull

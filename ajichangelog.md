@@ -15,3 +15,9 @@
   * terraform import is what terraform refresh does
   * ./terraform state rm # this is a good way to manage your state if it
     becomes corrupted, just remember to reimport after
+20102020
+  * -I where to find header files during compilation (build)
+    -L where to find .a and .so files during linking (build)
+    LD_LIBRARY_PATH extra places to find .so libs during loading (run)
+    -rpath (RUNPATH), a list of paths separated by ':' where to look for .so
+    libs when executing the binary

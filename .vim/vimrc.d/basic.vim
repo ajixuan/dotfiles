@@ -131,7 +131,7 @@ set tabstop=2
 
 " Linebreak on 500 characters
 set lbr
-set tw=79
+"set tw=79
 
 set ai "Auto indent
 set si "Smart indent
@@ -143,7 +143,6 @@ set nowrap
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Map <Space> to / (search) and Ctrl-<Space> to ? (backwards search)
 " <c-space> sends ^@ which is the <Nul> character
-map <space> /
 map <Nul> ?
 
 " Disable highlight when <leader><cr> is pressed
