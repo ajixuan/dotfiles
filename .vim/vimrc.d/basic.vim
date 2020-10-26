@@ -185,6 +185,12 @@ map <leader>cd :cd %:p:h<cr>:pwd<cr>
 " Set 0 to go to first non-space character
 map 0 ^
 
+" Move to beginning and end of line
+nmap H 0
+nmap L $
+vnoremap H 0
+vnoremap L $
+
 " Always split to right
 set splitright
 
@@ -223,6 +229,12 @@ vnoremap <leader>y "*y<CR>
 
 " Edit vimrc
 nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+
+" Fast quotes
+nnoremap <leader>" viw<esc>a"<esc>bi"<esc>lel
+nnoremap <leader>' viw<esc>a'<esc>bi'<esc>lel
+vnoremap <leader>" <esc>`<i"<esc>`>la"<esc>
+vnoremap <leader>' <esc>`<i'<esc>`>la'<esc>
 
 
 """"""""""""""""""""""""""""""
