@@ -221,6 +221,9 @@ inoremap <C-n> :nohl<CR>
 " Yank to clipboard-
 vnoremap <leader>y "*y<CR>
 
+" Edit vimrc
+nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+
 
 """"""""""""""""""""""""""""""
 " => Status line
