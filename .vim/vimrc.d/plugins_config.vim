@@ -13,7 +13,7 @@ noremap <leader>gs :G<CR>
 noremap <leader>ga :T git add -p %<CR>
 noremap <leader>gc :Gcommit<CR>
 noremap <leader>gp :Gpush<CR>
-noremap <leader>gd :Gdiffsplit<CR>
+noremap <leader>gd :Gvdiffsplit!<CR>
 noremap <leader>gh :diffget //2<CR>
 noremap <leader>gl :diffget //3<CR>
 
