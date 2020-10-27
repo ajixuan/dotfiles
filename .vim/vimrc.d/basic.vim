@@ -19,8 +19,9 @@ set autoread
 " like <leader>w saves the current file
 let mapleader = ","
 
-" Fast saving
+" Fast saving and quiting
 nmap <leader>w :w!<cr>
+nmap <leader>q :q<cr>
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
@@ -34,6 +35,9 @@ map <leader>e :!
 
 " Fast saving
 nmap <leader>w :w!<cr>
+
+" Easy esc
+inoremap jk <esc>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
@@ -82,6 +86,11 @@ augroup numbertoggle
   autocmd BufLeave,FocusLost,InsertEnter   * set number norelativenumber
 augroup END
 
+" Always show the status line
+set laststatus=2
+
+" Format the status line
+set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors, line visuals and Fonts
@@ -135,11 +144,31 @@ set lbr
 
 set ai "Auto indent
 set si "Smart indent
-set nowrap
 
+" Line wrapping
+set nowrap
+noremap <Backspace> :set nowrap!<CR>
+
+" Always split to right
+set splitright
+
+" Toggle line numbers and fold column for easy copying
+nnoremap <F2> :set number!<CR>:set relativenumber!<CR>:set foldcolumn=0<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Moving around, tabs, windows and buffers
+" => Moving around
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Move to beginning and end of line
+nmap H 0
+nmap L $
+vnoremap H 0
+vnoremap L $
+
+" Set 0 to go to first non-space character
+map 0 ^
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Tabs, windows and buffers
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Map <Space> to / (search) and Ctrl-<Space> to ? (backwards search)
 " <c-space> sends ^@ which is the <Nul> character
@@ -173,7 +202,7 @@ nmap <C-t> :tabnew<CR>
 " Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
 nmap <leader>tl :exe "tabn ".g:lasttab<CR>
-au TabLeave * let g:lasttab = tabpagenr()
+autocmd TabLeave * let g:lasttab = tabpagenr()
 
 " Opens a new tab with the current buffer's path
 " Super useful when editing files in the same directory
@@ -182,24 +211,16 @@ map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
 " Switch CWD to the directory of the open buffer
 map <leader>cd :cd %:p:h<cr>:pwd<cr>
 
-" Set 0 to go to first non-space character
-map 0 ^
+" Quickly open a buffer for scribble
+map <leader>b :vsp ~/buffer<cr>
 
-" Move to beginning and end of line
-nmap H 0
-nmap L $
-vnoremap H 0
-vnoremap L $
-
-" Always split to right
-set splitright
+" Quickly open a markdown buffer for scribble
+map <leader>x :vsp ~/buffer.md<cr>
 
 
 """"""""""""""""""""""""""""
 " => Editing
 """"""""""""""""""""""""""""
-" Toggle line numbers and fold column for easy copying
-nnoremap <F2> :set number!<CR>:set relativenumber!<CR>:set foldcolumn=0<CR>
 
 " Better copy & paste
 " When you want to paste large blocks of code into vim, press F2 before you
@@ -237,31 +258,11 @@ vnoremap <leader>" <esc>`<i"<esc>`>la"<esc>
 vnoremap <leader>' <esc>`<i'<esc>`>la'<esc>
 
 
-""""""""""""""""""""""""""""""
-" => Status line
-""""""""""""""""""""""""""""""
-" Always show the status line
-set laststatus=2
-
-" Format the status line
-set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
-
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Misc
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Quickly open a buffer for scribble
-map <leader>b :vsp ~/buffer<cr>
-
-" Quickly open a markdown buffer for scribble
-map <leader>x :vsp ~/buffer.md<cr>
-
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Auto commands
 " au = autocmd
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-if has("autocmd")
+augroup general
   " Auto reload .vimrc or *.vim ext files
   " ! mark will remove all autocmds before loading this one
   " This way autocmds won't stack on top from prev loads
@@ -275,7 +276,7 @@ if has("autocmd")
 
   " Retab files
   "autocmd BufWritePre * :call ResizeTabs()
-endif
+augroup END
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -284,7 +285,7 @@ endif
 " Returns true if paste mode is enabled
 function! HasPaste()
   if &paste
-  return 'PASTE MODE  '
+    return 'PASTE MODE  '
   endif
   return ''
 endfunction
