@@ -37,7 +37,14 @@ map <leader>e :!
 nmap <leader>w :w!<cr>
 
 " Easy esc
-inoremap jk <esc>
+inoremap ht <esc>
+
+" vim mapped key timeout length
+augroup timeoutlen
+  autocmd!
+  autocmd InsertEnter * set timeoutlen=100
+  autocmd InsertLeave * set timeoutlen=1000
+augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
@@ -151,6 +158,7 @@ noremap <Backspace> :set nowrap!<CR>
 
 " Always split to right
 set splitright
+set splitbelow
 
 " Toggle line numbers and fold column for easy copying
 nnoremap <F2> :set number!<CR>:set relativenumber!<CR>:set foldcolumn=0<CR>
@@ -278,6 +286,11 @@ augroup general
   "autocmd BufWritePre * :call ResizeTabs()
 augroup END
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Terminal
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+command! -nargs=* T 20split | terminal <args>
+command! -nargs=* VT vsplit | terminal <args>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
