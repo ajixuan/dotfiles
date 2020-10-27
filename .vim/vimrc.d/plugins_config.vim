@@ -2,7 +2,15 @@ call plug#begin('~/.vim/plugged')
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 Plug 'pbogut/fzf-mru.vim'
+Plug 'tpope/vim-fugitive'
 call plug#end()
+
+
+""""""""""""""""""""""""""""""
+" => vim fugitive
+""""""""""""""""""""""""""""""
+noremap <leader>gs :G<CR>
+noremap <leader>gh :diffget //3<CR>
 
 """"""""""""""""""""""""""""""
 " => bufExplorer plugin
