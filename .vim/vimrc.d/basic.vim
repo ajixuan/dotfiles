@@ -31,7 +31,7 @@ command! W w !sudo tee % > /dev/null
 set nomodeline
 
 " Short cut for running ! commands
-map <leader>e :!
+map <leader>e :terminal<space>
 
 " Fast saving
 nmap <leader>w :w!<cr>
@@ -192,10 +192,10 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " Quick resize windows
-nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/3)<CR>
-nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 3/2)<CR>
-nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 3/2)<CR>
-nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 2/3)<CR>
+nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/5)<CR>
+nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 5/3)<CR>
+nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 2/5)<CR>
+nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 5/3)<CR>
 
 " VSP and SP
 map <leader>v :vsp<CR><c-p><CR>
@@ -291,6 +291,7 @@ augroup END
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 command! -nargs=* T 20split | terminal <args>
 command! -nargs=* VT vsplit | terminal <args>
+tnoremap <A-,> <C-\><C-n>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
