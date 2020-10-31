@@ -1,14 +1,16 @@
 #!/bin/bash
 
+# Source builds
 . "${script_dir}/build_env.sh"
 build_deps="${BUILD_DEPS:-true}"
 static="${STATIC:-true}"
-tmp_dir="${TMP_DIR:-/tmp/dotfiles}"
+tmp_dir="${TMP_DIR:-${HOME}/tmp/artifacts}"
 build_dir="${BUILD_DIR:-/usr/local}"
 orig_path="${PATH}"
 PATH="${PATH}:${build_dir}/bin"
 
 mkdir -p "${build_dir}"
+mkdir -p "${tmp_dir}"
 
 ###############
 # Helpers
@@ -48,30 +50,23 @@ function curls {
 
 ##########################
 # Build deps
-if ! which nvim 2>&1 ; then
-  curls "${nvim_url}" "${tmp_dir}/nvim/nvim.tar.gz"
-  ( cd "${tmp_dir}/nvim/" && \
-    tar xvf "nvim.tar.gz" && \
-    cd nvim-*  && \
-    mv ./bin/nvim "${build_dir}/bin/" && \
-    cp --no-clobber -R ./share/* "${build_dir}/share/" )
-fi
+
 
 if ${build_deps}; then
   # build autoconf
-  if ! which autoconf >/dev/null; then
+  if ! [ -f "${build_dir}/autoconf" ] ; then
     curls "${autoconf_url}" "${tmp_dir}/autoconf/autoconf.tar.gz"
     std_build 'autoconf'
   fi
 
   # build automake
-  if ! which aclocal 2>&1 >/dev/null; then
+  if ! [ -f "${build_dir}/aclocal" ] ; then
     curls "${automake_url}" "${tmp_dir}/automake/automake.tar.gz"
     std_build 'automake'
   fi
 
   # build pkg-config
-  if ! which pkg-config 2>&1 >/dev/null; then
+  if ! [ -f "${build_dir}/pkg-config" ] ; then
     curls "${pkgconfig_url}" "${tmp_dir}/pkg-config/pkg-config.tar.gz"
     std_build 'pkg-config' '--with-internal-glib'
   fi
@@ -82,8 +77,8 @@ if ${build_deps}; then
 fi
 
 # build ripgrep
-if ! which rg 2>&1 > /dev/null ; then
-  if ! which cargo > /dev/null; then
+if ! [ -f "${build_dir}/rg" ] ; then
+  if ! [ -f "${build_dir}/cargo" ] ; then
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
     sed -i '/^\# Environment variables/a PATH=\$PATH:\$HOME\/.cargo\/bin' "${HOME}/.bashrc"
   fi
@@ -95,15 +90,15 @@ if ! which rg 2>&1 > /dev/null ; then
 fi
 
 # build tmux
-if ! which tmux 2>&1 > /dev/null ; then
+if ! [ -f "${build_dir}/tmux" ] ; then
   # build libevent
-  if [ ! -f ${build_dir}/lib/libevent.a ]; then
+  if ! [ -f ${build_dir}/lib/libevent.a ]; then
     curls "${libevent_url}" "${tmp_dir}/libevent/libevent.tar.gz"
     std_build 'libevent' "--enable-shared"
   fi
 
   # build ncurses
-  if [ ! -f ${build_dir}/lib/libncurses.a ]; then
+  if ! [ -f "${build_dir}/lib/libncurses.a" ]; then
     curls "${ncurses_url}" "${tmp_dir}/ncurses/ncurses.tar.gz" "${ncureses_asc}" \
     'https://invisible-island.net/public/dickey-invisible-island.txt'
     std_build 'ncurses' "--with-shared --with-termlib --enable-pc-files \
@@ -111,22 +106,27 @@ if ! which tmux 2>&1 > /dev/null ; then
   fi
 
   # build tmux
-  if ! which tmux > /dev/null ; then
-    curls "${tmux_url}" "${tmp_dir}/tmux/tmux.tar.gz"
-    ( cd "${tmp_dir}/tmux"   && \
-        tar xvf ./tmux.tar.gz && \
-        cd tmux-*/            && \
-        LDFLAGS=${build_dir}/lib \
-        ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
-        ./autogen.sh && \
-        #PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
-        ./configure --enable-static --prefix=${build_dir}  && \
-        make && make install)
-  fi
+  curls "${tmux_url}" "${tmp_dir}/tmux/tmux.tar.gz"
+  ( cd "${tmp_dir}/tmux"   && \
+      tar xvf ./tmux.tar.gz && \
+      cd tmux-*/            && \
+      LDFLAGS=${build_dir}/lib \
+      ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
+      ./autogen.sh && \
+      #PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
+      ./configure --enable-static --prefix=${build_dir}  && \
+      make && make install)
 fi
 
+# Build nvim
+if ! [ -f "${build_dir}/bin/nvim" ] ; then
+  curls "${nvim_url}" "${tmp_dir}/neovim/neonvim.tar.gz"
+  std_build 'neovim'
+fi
+
+
 # ctags
-if ! which ctags 2>&1 > /dev/null ; then
+if ! [ -f "${build_dir}/ctags" ] ; then
   git clone "${ctags_url}" "${tmp_dir}/ctags"
   ( cd "${tmp_dir}" && \
       "./autogen.sh" && \
@@ -135,7 +135,7 @@ if ! which ctags 2>&1 > /dev/null ; then
       make install )
 fi
 
-# cleanup
+# cleanup if path is temporary
 PATH="${orig_path}"
 if [[ ! ${PATH} =~ .*${build_dir}.* ]]; then
   echo rm -rf "${build_dir}"
