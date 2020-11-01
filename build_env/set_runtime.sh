@@ -18,6 +18,6 @@ if [ ! -f "${script_dir}/autoload/plug.vim" ]; then
 fi
 
 if ${build}; then
-  echo "Building deps"
+  echo "Building tools"
   . "${script_dir}/build.sh"
 fi

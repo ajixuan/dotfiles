@@ -1,4 +1,5 @@
 ctags_url='https://github.com/universal-ctags/ctags.git'
+cmake_url='https://github.com/Kitware/CMake/releases/download/v3.19.0-rc2/cmake-3.19.0-rc2.tar.gz'
 rust_url='https://sh.rustup.rs'
 ripgrep_url='https://github.com/BurntSushi/ripgrep'
 #tmux_url='https://github.com/tmux/tmux/archive/3.1b.tar.gz'
