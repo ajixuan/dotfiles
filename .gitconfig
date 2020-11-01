@@ -10,6 +10,8 @@
     ci = commit
     ps = push
     pl = pull
+    d = diff
+    dc = diff --cached
 [core]
 	hooksPath = .githooks
 	editor = vim
