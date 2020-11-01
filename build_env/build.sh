@@ -7,8 +7,8 @@ orig_path="${PATH}"
 
 # Environment Varibales
 PATH="${PATH}:${build_dir}/bin"
-export CARGO_HOME="${BUILD_DIR:-${HOME}}"
-export RUSTUP_HOME="${BUILD_DIR:-${HOME}}"
+export CARGO_HOME="${BUILD_DIR:-${HOME}/.cargo}/.cargo"
+export RUSTUP_HOME="${BUILD_DIR:-${HOME}/.cargo}/.cargo"
 
 # Source build variables
 . "${script_dir}/build_env.sh"
@@ -28,7 +28,7 @@ function std_build {
   ( cd "${tmp_dir}/${_pkg_name}"  && \
     tar xvf ${_pkg_name}.tar.gz    && \
     cd ${_pkg_name}-*/             && \
-    ./configure --prefix=${build_dir} ${_extra_config_flags[@]} && \
+    [ -f "./configure" ] && ./configure "--prefix=${build_dir}" "${_extra_config_flags[@]}" && \
     make && make install )
 }
 
