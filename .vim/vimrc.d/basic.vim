@@ -37,12 +37,12 @@ map <leader>e :tabnew<cr>:terminal<space>
 nmap <leader>w :w!<cr>
 
 " Easy esc
-inoremap hh <esc>
+inoremap ,. <esc>
 
 " vim mapped key timeout length
 augroup timeoutlen
   autocmd!
-  autocmd InsertEnter * set timeoutlen=120
+  autocmd InsertEnter * set timeoutlen=100
   autocmd InsertLeave * set timeoutlen=1000
 augroup END
 
