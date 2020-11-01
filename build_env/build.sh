@@ -1,13 +1,20 @@
 #!/bin/bash
-
-# Source builds
-. "${script_dir}/build_env.sh"
 build_deps="${BUILD_DEPS:-true}"
 static="${STATIC:-true}"
 tmp_dir="${TMP_DIR:-${HOME}/tmp/artifacts}"
 build_dir="${BUILD_DIR:-/usr/local}"
 orig_path="${PATH}"
+
+# Environment Varibales
 PATH="${PATH}:${build_dir}/bin"
+export CARGO_HOME="${BUILD_DIR:-${HOME}}"
+export RUSTUP_HOME="${BUILD_DIR:-${HOME}}"
+
+# Source build variables
+. "${script_dir}/build_env.sh"
+
+# restore PATH on exit
+trap "PATH=\"${orig_path}\"" EXIT SIGINT SIGTERM
 
 mkdir -p "${build_dir}"
 mkdir -p "${tmp_dir}"
@@ -50,23 +57,21 @@ function curls {
 
 ##########################
 # Build deps
-
-
 if ${build_deps}; then
   # build autoconf
-  if ! [ -f "${build_dir}/autoconf" ] ; then
+  if ! [ -f "${build_dir}/bin/autoconf" ] ; then
     curls "${autoconf_url}" "${tmp_dir}/autoconf/autoconf.tar.gz"
     std_build 'autoconf'
   fi
 
   # build automake
-  if ! [ -f "${build_dir}/aclocal" ] ; then
+  if ! [ -f "${build_dir}/bin/aclocal" ] ; then
     curls "${automake_url}" "${tmp_dir}/automake/automake.tar.gz"
     std_build 'automake'
   fi
 
   # build pkg-config
-  if ! [ -f "${build_dir}/pkg-config" ] ; then
+  if ! [ -f "${build_dir}/bin/pkg-config" ] ; then
     curls "${pkgconfig_url}" "${tmp_dir}/pkg-config/pkg-config.tar.gz"
     std_build 'pkg-config' '--with-internal-glib'
   fi
@@ -77,20 +82,25 @@ if ${build_deps}; then
 fi
 
 # build ripgrep
-if ! [ -f "${build_dir}/rg" ] ; then
-  if ! [ -f "${build_dir}/cargo" ] ; then
+if ! [ -f "${build_dir}/bin/rg" ] ; then
+
+  # Build cargo
+  if ! [ -f "${build_dir}/bin/cargo" ] ; then
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
-    sed -i '/^\# Environment variables/a PATH=\$PATH:\$HOME\/.cargo\/bin' "${HOME}/.bashrc"
+    #"${build_dir}/rustup" toolchain install nightly --allow-downgrade --profile minimal --component cargo
+
+    # If building in system standard directory, also write cargo home
+    [ -z "${BUILD_DIR}" ] && sed -i '/^\# Environment variables/a PATH=\$PATH:'"${CARGO_HOME}"'\/.cargo\/bin' "${HOME}/.bashrc"
   fi
 
-  git clone "${ripgrep_url}" "${tmp_dir}/ripgrep"
-  ( cd "${tmp_dir}/ripgrep"           && \
-    cargo build --release              && \
+  [ ! -d "${tmp_dir}/ripgrep" ] && git clone "${ripgrep_url}" "${tmp_dir}/ripgrep"
+  ( cd "${tmp_dir}/ripgrep" && \
+    cargo build --release   && \
     cp ./target/release/rg "${HOME}/bin" )
 fi
 
 # build tmux
-if ! [ -f "${build_dir}/tmux" ] ; then
+if ! [ -f "${build_dir}/bin/tmux" ] ; then
   # build libevent
   if ! [ -f ${build_dir}/lib/libevent.a ]; then
     curls "${libevent_url}" "${tmp_dir}/libevent/libevent.tar.gz"
@@ -108,25 +118,24 @@ if ! [ -f "${build_dir}/tmux" ] ; then
   # build tmux
   curls "${tmux_url}" "${tmp_dir}/tmux/tmux.tar.gz"
   ( cd "${tmp_dir}/tmux"   && \
-      tar xvf ./tmux.tar.gz && \
-      cd tmux-*/            && \
-      LDFLAGS=${build_dir}/lib \
-      ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
-      ./autogen.sh && \
-      #PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
-      ./configure --enable-static --prefix=${build_dir}  && \
-      make && make install)
+    tar xvf ./tmux.tar.gz  && \
+    cd tmux-*/             && \
+    LDFLAGS=${build_dir}/lib  \
+    ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
+    ./autogen.sh && \
+    #PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
+    ./configure --enable-static --prefix=${build_dir}  && \
+    make && make install)
 fi
 
 # Build nvim
 if ! [ -f "${build_dir}/bin/nvim" ] ; then
-  curls "${nvim_url}" "${tmp_dir}/neovim/neonvim.tar.gz"
+  curls "${nvim_url}" "${tmp_dir}/neovim/neovim.tar.gz"
   std_build 'neovim'
 fi
 
-
 # ctags
-if ! [ -f "${build_dir}/ctags" ] ; then
+if ! [ -f "${build_dir}/bin/ctags" ] ; then
   git clone "${ctags_url}" "${tmp_dir}/ctags"
   ( cd "${tmp_dir}" && \
       "./autogen.sh" && \
@@ -136,7 +145,6 @@ if ! [ -f "${build_dir}/ctags" ] ; then
 fi
 
 # cleanup if path is temporary
-PATH="${orig_path}"
 if [[ ! ${PATH} =~ .*${build_dir}.* ]]; then
   echo rm -rf "${build_dir}"
 fi
