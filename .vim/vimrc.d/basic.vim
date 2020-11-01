@@ -42,7 +42,7 @@ inoremap hh <esc>
 " vim mapped key timeout length
 augroup timeoutlen
   autocmd!
-  autocmd InsertEnter * set timeoutlen=110
+  autocmd InsertEnter * set timeoutlen=120
   autocmd InsertLeave * set timeoutlen=1000
 augroup END
 
@@ -248,7 +248,7 @@ vnoremap <C-Down> :sort<CR>
 " Removes highlight of your last search
 noremap <C-n> :nohl<CR>
 vnoremap <C-n> :nohl<CR>
-inoremap <C-n> :nohl<CR>
+inoremap <C-n> <esc>:nohl<CR>i
 
 " Retab lines
 " noremap tt :call ResizeTabs()<CR>
