@@ -7,8 +7,8 @@ orig_path="${PATH}"
 
 # Environment Varibales
 PATH="${PATH}:${build_dir}/bin"
-export CARGO_HOME="${BUILD_DIR:-${HOME}/.cargo}/.cargo"
-export RUSTUP_HOME="${BUILD_DIR:-${HOME}/.cargo}/.cargo"
+export CARGO_HOME="${BUILD_DIR:-${HOME}}/.cargo"
+export RUSTUP_HOME="${BUILD_DIR:-${HOME}}/.cargo"
 
 # Source build variables
 . "${script_dir}/build_env.sh"
@@ -25,10 +25,10 @@ function std_build {
   local _pkg_name="${1}"
   local _extra_config_flags=(${2:-})
 
-  ( cd "${tmp_dir}/${_pkg_name}"  && \
+  ( cd "${tmp_dir}/${_pkg_name}"   && \
     tar xvf ${_pkg_name}.tar.gz    && \
     cd ${_pkg_name}-*/             && \
-    [ -f "./configure" ] && ./configure "--prefix=${build_dir}" "${_extra_config_flags[@]}" && \
+    [ -f "./configure" ] && ./configure "--prefix=${build_dir}" "${_extra_config_flags[@]}" ||\
     make && make install )
 }
 
@@ -46,16 +46,17 @@ function curls {
     rm /tmp/tmp.key
   fi
 
-  echo "downloading ${_url}"
-  curl -LsSf "${_url}" --create-dirs -o "${_output}"
-  if [ -n "${_asf_url}" ]; then
-    echo "verifying with key from ${_asf_url}"
-    curl -LsSf "${_asf_url}" --create-dirs -o "${_output}.asf"
-    gpg --verify "${_output}.asf"
+  if [ ! -f "${_output}" ]; then
+    echo "downloading ${_url}"
+    curl -LsSf "${_url}" --create-dirs -o "${_output}"
+    if [ -n "${_asf_url}" ]; then
+      echo "verifying with key from ${_asf_url}"
+      curl -LsSf "${_asf_url}" --create-dirs -o "${_output}.asf"
+      gpg --verify "${_output}.asf"
+    fi
   fi
 }
 
-##########################
 # Build deps
 if ${build_deps}; then
   # build autoconf
@@ -86,6 +87,7 @@ if ! [ -f "${build_dir}/bin/rg" ] ; then
 
   # Build cargo
   if ! [ -f "${build_dir}/bin/cargo" ] ; then
+    echo "Building rust"
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
     #"${build_dir}/rustup" toolchain install nightly --allow-downgrade --profile minimal --component cargo
 
@@ -93,6 +95,7 @@ if ! [ -f "${build_dir}/bin/rg" ] ; then
     [ -z "${BUILD_DIR}" ] && sed -i '/^\# Environment variables/a PATH=\$PATH:'"${CARGO_HOME}"'\/.cargo\/bin' "${HOME}/.bashrc"
   fi
 
+  echo "Building ripgrep"
   [ ! -d "${tmp_dir}/ripgrep" ] && git clone "${ripgrep_url}" "${tmp_dir}/ripgrep"
   ( cd "${tmp_dir}/ripgrep" && \
     cargo build --release   && \
@@ -101,6 +104,7 @@ fi
 
 # build tmux
 if ! [ -f "${build_dir}/bin/tmux" ] ; then
+
   # build libevent
   if ! [ -f ${build_dir}/lib/libevent.a ]; then
     curls "${libevent_url}" "${tmp_dir}/libevent/libevent.tar.gz"
@@ -116,6 +120,7 @@ if ! [ -f "${build_dir}/bin/tmux" ] ; then
   fi
 
   # build tmux
+  echo "Building tmux"
   curls "${tmux_url}" "${tmp_dir}/tmux/tmux.tar.gz"
   ( cd "${tmp_dir}/tmux"   && \
     tar xvf ./tmux.tar.gz  && \
@@ -130,6 +135,7 @@ fi
 
 # Build nvim
 if ! [ -f "${build_dir}/bin/nvim" ] ; then
+  echo "Building nvim"
   curls "${nvim_url}" "${tmp_dir}/neovim/neovim.tar.gz"
   std_build 'neovim'
 fi
