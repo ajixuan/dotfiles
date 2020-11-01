@@ -31,7 +31,7 @@ command! W w !sudo tee % > /dev/null
 set nomodeline
 
 " Short cut for running ! commands
-map <leader>e :terminal<space>
+map <leader>e :tabnew<cr>:terminal<space>
 
 " Fast saving
 nmap <leader>w :w!<cr>
