@@ -77,6 +77,12 @@ if ${build_deps}; then
     std_build 'pkg-config' '--with-internal-glib'
   fi
 
+  # build cmake
+  if ! [ -f "${build_dir}/bin/cmake" ] ; then
+    curls "${cmake_url}" "${tmp_dir}/cmake/cmake.tar.gz"
+    std_build 'cmake'
+  fi
+
   # build bison
   # curls "${bison_url}" "${tmp_dir}/bison/bison.tar.gz"
   # std_build 'bison'
