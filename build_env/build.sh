@@ -164,3 +164,6 @@ if [[ ! ${PATH} =~ .*${build_dir}.* ]]; then
   echo rm -rf "${build_dir}"
 fi
 rm -rf "${tmp_dir}"
+
+# Install to your machine with rsync
+# rsync -a -u ${build_dir} /usr/local
