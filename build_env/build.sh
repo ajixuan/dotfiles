@@ -23,13 +23,16 @@ mkdir -p "${tmp_dir}"
 # Helpers
 function std_build {
   local _pkg_name="${1}"
-  local _extra_config_flags=(${2:-})
+  local _extra_config_flags=(${CONFIG_FLAGS:-})
+  local _extra_make_flags=(${MAKE_FLAGS:-})
+  local _extra_make_install_flags=(${MAKE_INSTALL_FLAGS:-})
 
+  echo $_extra_make_flags
   ( cd "${tmp_dir}/${_pkg_name}"   && \
     tar xvf ${_pkg_name}.tar.gz    && \
     cd ${_pkg_name}-*/             && \
     [ -f "./configure" ] && ./configure "--prefix=${build_dir}" "${_extra_config_flags[@]}" ||\
-    make && make install )
+    make -j4 "${_extra_make_flags}" && make -j4 "${_extra_make_install_flags}" install )
 }
 
 # Curl and verify
@@ -80,7 +83,7 @@ if ${build_deps}; then
   # build cmake
   if ! [ -f "${build_dir}/bin/cmake" ] ; then
     curls "${cmake_url}" "${tmp_dir}/cmake/cmake.tar.gz"
-    std_build 'cmake'
+    std_build 'cmake' CMAKE_INSTALL_PREFIX=/full/path/
   fi
 
   # build bison
@@ -143,7 +146,7 @@ fi
 if ! [ -f "${build_dir}/bin/nvim" ] ; then
   echo "Building nvim"
   curls "${nvim_url}" "${tmp_dir}/neovim/neovim.tar.gz"
-  std_build 'neovim'
+  MAKE_INSTALL_FLAGS="DESTDIR=${build_dir}" MAKE_FLAGS="CMAKE_INSTALL_PREFIX=${build_dir}" std_build 'neovim'
 fi
 
 # ctags
