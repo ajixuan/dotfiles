@@ -5,3 +5,6 @@
 .vim/plugged
 build_env/autoload
 .config/nvim/.netrwhist
+.vim/.netrwhist
+.aws/cli
+.aws/.*
