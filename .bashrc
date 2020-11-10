@@ -82,6 +82,8 @@ alias g='git'
 alias tsm="transmission-remote"
 alias k="kubectl"
 alias dang='docker rmi $(docker images -f "dangling=true" -q)'
+alias note="grep $(date +%d%m%Y) ${HOME}/ajichangelog.md || echo $(date +%d%m%Y) >> ${HOME}/ajichangelog.md && vi ${HOME}/ajichangelog.md"
+alias todo="grep $(date +%d%m%Y) ${HOME}/todo.md || echo $(date +%d%m%Y) >> ${HOME}/todo.md && vi ${HOME}/todo.md"
 
 #fzf
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
