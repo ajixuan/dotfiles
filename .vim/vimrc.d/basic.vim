@@ -38,6 +38,7 @@ nmap <leader>w :w!<cr>
 
 " Easy esc
 inoremap ,. <esc>
+vnoremap ,. <esc>
 
 " vim mapped key timeout length
 augroup timeoutlen
@@ -293,9 +294,9 @@ command! -nargs=* T 20split | terminal <args>
 command! -nargs=* VT vsplit | terminal <args>
 tnoremap <A-,> <C-\><C-n>
 
-augroup terminal
-  autocmd! TermOpen * startinsert
-augroup END
+"augroup terminal
+"  autocmd! TermOpen * startinsert
+"augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
