@@ -14,7 +14,7 @@
     dc = diff --cached
 [core]
 	hooksPath = .githooks
-	editor = vim
+	editor = nvim
 [rebase]
 	autosquash = true
 [push]
