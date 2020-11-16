@@ -226,6 +226,27 @@ map <leader>b :vsp ~/buffer<cr>
 " Quickly open a markdown buffer for scribble
 map <leader>x :vsp ~/buffer.md<cr>
 
+" Quickly open todo
+map <leader>o :vsp ~/todo.md<cr>
+
+" Auto window resize
+augroup ReduceNoise
+    autocmd!
+    " Automatically resize active split to 85 width
+    autocmd WinEnter * :call ResizeSplits()
+augroup END
+
+function! ResizeSplits()
+    if &columns < 100 && winwidth('$') < 50
+      set winwidth=85
+      wincmd =
+    else
+      set winwidth=50
+      wincmd =
+    endif
+endfunction
+
+
 
 """"""""""""""""""""""""""""
 " => Editing
