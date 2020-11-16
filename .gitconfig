@@ -13,6 +13,7 @@
     d = diff
     dc = diff --cached
     cp = cherry-pick
+    rv = rev-parse HEAD
 [core]
 	hooksPath = .githooks
 	editor = nvim
