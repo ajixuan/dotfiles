@@ -35,4 +35,7 @@ fi
 # Set dvorak as default keyboard
 setxkbmap -layout dvorak &
 
+#xcompmgr
+xcompmgr -c -C &
+
 exec awesome

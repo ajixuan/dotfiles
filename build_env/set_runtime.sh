@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+
+# Arch based packages
+# Composite manager: xcompmgr
+#   - pacman -S xcompmgr
+#   - AUR transset-df
+# Terminal: alacritty
+
 # vars
 export build=${BUILD:-true}
 export BUILD_DIR=${BUILD_DIR:-${HOME}/tmp/local}
