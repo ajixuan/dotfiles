@@ -5,9 +5,8 @@
     [] do not auto create tab if cancelling terminal command
     [] better fuzzy search command for none git files
     [] git status bar
-  terminal:
-    []
+    [] md folding
 21112020
   auto window-management:
-    [] alacritty
+    [x] alacritty
     [] wmctrl
