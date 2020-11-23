@@ -1,16 +1,18 @@
 #!/bin/bash
 set -e
 
+# A script to setup my work environment
 
 # Arch based packages
 # Composite manager: xcompmgr
 #   - pacman -S xcompmgr
 #   - AUR transset-df
 # Terminal: alacritty
+# floating windows: alnj
+#   - wmctrl
+#   - xdotool
 
 # vars
-export build=${BUILD:-true}
-export BUILD_DIR=${BUILD_DIR:-${HOME}/tmp/local}
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 plug_url='https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
 
