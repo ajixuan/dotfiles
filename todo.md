@@ -10,3 +10,7 @@
   auto window-management:
     [x] alacritty
     [] wmctrl
+22112020
+  [] migrate to zsh
+
+
