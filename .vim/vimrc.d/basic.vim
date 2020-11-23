@@ -199,8 +199,8 @@ nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 2/5)<CR>
 nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 5/3)<CR>
 
 " VSP and SP
-map <leader>v :vsp<CR><c-p><CR>
-map <leader>s :sp<CR><c-p><CR>
+map <leader>\| :vsp<CR><c-p><CR>
+map <leader>- :sp<CR><c-p><CR>
 
 " Useful mappings for managing tabs
 nmap <C-c> :tabclose<CR>
@@ -287,6 +287,9 @@ nnoremap <leader>' viw<esc>a'<esc>bi'<esc>lel
 vnoremap <leader>" <esc>`<i"<esc>`>la"<esc>
 vnoremap <leader>' <esc>`<i'<esc>`>la'<esc>
 
+" Replace
+nnoremap <leader>s :%s/
+vnoremap <leader>s :s/
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Auto commands
