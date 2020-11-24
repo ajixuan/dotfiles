@@ -1,9 +1,11 @@
 #!/bin/bash
 # Script for quickly compiling tools
+set -e
+
+# Default variables
+script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
-download_dir="${DOWNLOAD_DIR:-${HOME}/tmp/artifacts}"
-build_dir="${BUILD_DIR:-${HOME}/tmp/usr/local}"
-orig_path="${PATH}"
+build_base_dir="${BUILD_DIR:-${HOME}/tmp}"
 
 usage() {
   cat <<EOF
@@ -32,15 +34,11 @@ EOF
 while getopts ":hip:b:d:r:" opt; do
   case ${opt} in
     h) usage ;;
-    i) build_dir='/usr/local' ;;
+    i) build_base_dir='' ;;
     p) build_list=(${OPTARG//,/ }) ;;
     b)
-      if [ -d ${OPTARG} ]; then
-        build_dir="${OPTARG}"
-      else
-        echo "no directory ${OPTARG}"
-        exit 1
-      fi
+      echo "setting build_dir to ${OPTARG}"
+      build_base_dir="${OPTARG}"
     ;;
     d)
       if [ -d ${OPTARG} ]; then
@@ -62,8 +60,20 @@ while getopts ":hip:b:d:r:" opt; do
 done
 
 # Environment Varibales
-PATH="${PATH}:${build_dir}/bin"
-[ -z "${dep_build_dir}" ] && dep_build_dir="${build_dir}"
+download_dir="${DOWNLOAD_DIR:-${build_base_dir}/artifacts}"
+build_dir="${build_base_dir}/usr/local"
+orig_path="${PATH}"
+export PATH="/usr/bin:${build_dir}/bin"
+
+# By default rust will install cargo to ${HOME}
+# If not installing rust to system, install rust to temporary directory
+if [[ ! ${build_dir} =~ ^/usr.*  ]]; then
+  export CARGO_HOME="${build_dir}/cargo"
+  export RUSTUP_HOME="${build_dir}/cargo"
+  export PATH="${PATH}:${RUSTUP_HOME}/bin"
+fi
+
+[ -z "${dep_build_dir}" ] && deps_build_dir="${build_dir}"
 
 # Source build variables
 . "${script_dir}/build_env.sh"
@@ -92,7 +102,8 @@ function std_build {
     tar xvf ${_pkg_name}.tar.gz          && \
     cd ${_pkg_name}-*/                   && \
     [ -f "./configure" ] && ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" ||\
-    make -j4 "${_extra_make_flags}" && make -j4 "${_extra_make_install_flags}" install )
+    make -j4 "${_extra_make_flags[@]}" && make -j4 "${_extra_make_install_flags[@]}" install )
+  unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
 }
 
 # Curl and verify
@@ -109,7 +120,7 @@ function curls {
     rm /tmp/tmp.key
   fi
 
-  if [ ! -f "${_output}" ]; then
+  if ! [ -f "${_output}" ]; then
     echo "downloading ${_url}"
     curl -LsSf "${_url}" --create-dirs -o "${_output}"
     if [ -n "${_asf_url}" ]; then
@@ -151,16 +162,9 @@ build_tools(){
 }
 
 install_rust() {
-  if ! [ -f "${build_dir}/bin/cargo" ] ; then
+  if ! [ -f "${build_dir}/cargo/bin/cargo" ] ; then
     echo "Installing rust"
 
-    # By default rust will install cargo to ${HOME}
-    # If not installing rust to system, install rust to temporary directory
-    if [[ ! ${build_dir} =~ ^/usr.*  ]]; then
-      export CARGO_HOME="${build_dir}/cargo"
-      export RUSTUP_HOME="${build_dir}/cargo"
-      export PATH="${PATH}:${RUSTUP_HOME}/bin"
-    fi
 
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
     rustup toolchain install nightly --allow-downgrade --profile minimal --component cargo
@@ -179,10 +183,10 @@ build_ripgrep(){
     install_rust
 
     echo "Building ripgrep"
-    [ ! -d "${download_dir}/ripgrep" ] && git clone "${ripgrep_url}" "${download_dir}/ripgrep"
+    ! [ -d "${download_dir}/ripgrep" ] && git clone "${ripgrep_url}" "${download_dir}/ripgrep"
     ( cd "${download_dir}/ripgrep" && \
-      cargo build --release   && \
-      cp ./target/release/rg "${HOME}/bin" )
+      cargo build --release && \
+      cp ./target/release/rg "${build_dir}/bin/" )
   fi
 }
 
@@ -192,15 +196,18 @@ build_tmux() {
     # build libevent
     if ! [ -f ${build_dir}/lib/libevent.a ]; then
       curls "${libevent_url}" "${download_dir}/libevent/libevent.tar.gz"
-      std_build 'libevent' "--enable-shared"
+      CONFIG_FLAGS="--enable-shared" std_build 'libevent'
     fi
 
     # build ncurses
     if ! [ -f "${build_dir}/lib/libncurses.a" ]; then
       curls "${ncurses_url}" "${download_dir}/ncurses/ncurses.tar.gz" "${ncureses_asc}" \
       'https://invisible-island.net/public/dickey-invisible-island.txt'
-      std_build 'ncurses' "--with-shared --with-termlib --enable-pc-files \
-                          --with-pkg-config-libdir=${build_dir}/lib/pkgconfig"
+      CONFIG_FLAGS="--with-shared     \
+                    --with-termlib    \
+                    --enable-pc-files \
+                    --with-pkg-config-libdir=${build_dir}/lib/pkgconfig" \
+      std_build 'ncurses'
     fi
 
     # build tmux
@@ -212,7 +219,7 @@ build_tmux() {
       LDFLAGS=${build_dir}/lib  \
       ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
       ./autogen.sh && \
-      #PKG_CONFIG_PATH=${build_dir}/lib/pkgconfig \
+      PKG_CONFIG=${build_dir}/bin/pkg-config \
       ./configure --enable-static --prefix=${build_dir}  && \
       make && make install)
   fi
@@ -226,11 +233,11 @@ build_nvim(){
   fi
 }
 
-[[ "${build_list[@]}" =~ "rust" ]] && install_rust
-[[ "${build_list[@]}" =~ "ripgrep" ]] && build_ripgrep
-[[ "${build_list[@]}" =~ "tmux" ]] && build_tmux
-[[ "${build_list[@]}" =~ "nvim" ]] && build_nvim
-
+build_tools
+[[ "${build_list[@]}" =~ rust ]] && install_rust
+[[ "${build_list[@]}" =~ ripgrep ]] && build_ripgrep
+[[ "${build_list[@]}" =~ tmux ]] && build_tmux
+[[ "${build_list[@]}" =~ nvim ]] && build_nvim
 
 # ctags
 #if ! [ -f "${build_dir}/bin/ctags" ] ; then
@@ -243,10 +250,7 @@ build_nvim(){
 #fi
 
 # cleanup if path is temporary
-if [[ ! ${PATH} =~ .*${build_dir}.* ]]; then
-  echo rm -rf "${build_dir}"
-fi
-rm -rf "${download_dir}"
+#rm -rf "${download_dir}"
 
 # Install to your machine with rsync
 # rsync -a -u ${build_dir} /usr/local
