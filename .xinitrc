@@ -36,6 +36,6 @@ fi
 setxkbmap -layout dvorak &
 
 #xcompmgr
-xcompmgr -c -C -o 1 &
+xcompmgr -c -C -o 0.80 &
 
 exec awesome
