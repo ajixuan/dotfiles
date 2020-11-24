@@ -12,5 +12,6 @@
     [] wmctrl
 22112020
   [] migrate to zsh
-
-
+23112020
+  [x] fix build.sh bugs
+  []  build neovim duplicates build_dir
