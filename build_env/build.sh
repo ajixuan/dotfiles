@@ -6,6 +6,7 @@ set -e
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
 build_base_dir="${BUILD_DIR:-${HOME}/tmp}"
+build_list=(rust ripgrep tmux nvim)
 
 usage() {
   cat <<EOF
@@ -81,9 +82,6 @@ fi
 # restore PATH on exit
 trap "PATH=\"${orig_path}\"" EXIT SIGINT SIGTERM
 
-# Build list: list of packages to bulid
-# default is build all
-build_list=(rust ripgrep tmux nvim)
 
 # Create build directories if not exist
 mkdir -p "${build_dir}"
