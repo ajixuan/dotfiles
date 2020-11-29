@@ -121,7 +121,11 @@ set colorcolumn=80
 
 " Color groups
 highlight ColorColumn ctermbg=blue
-highlight ExtraWhitespace ctermbg=red guibg=red
+highlight ExtraWhitespace ctermbg=1 guibg=1
+highlight LspDiagnosticsError ctermfg=1
+highlight LspDiagnosticsErrorSign ctermfg=1
+highlight LspDiagnosticsWarning ctermfg=yellow
+highlight LspDiagnosticsWarningSign ctermfg=yellow
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

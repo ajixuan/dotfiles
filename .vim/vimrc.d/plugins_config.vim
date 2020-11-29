@@ -3,8 +3,21 @@ Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
 Plug 'pbogut/fzf-mru.vim'
 Plug 'tpope/vim-fugitive'
+Plug 'neovim/nvim-lspconfig'
+"Plug 'nvim-lua/completion-nvim'
 call plug#end()
 
+
+
+""""""""""""""""""""""""""""""
+" completion
+""""""""""""""""""""""""""""""
+"autocmd BufEnter * lua require'completion'.on_attach()
+
+""""""""""""""""""""""""""""""
+" nvim lsp
+""""""""""""""""""""""""""""""
+lua require'lspconfig'.rust_analyzer.setup{}
 
 """"""""""""""""""""""""""""""
 " => vim fugitive
