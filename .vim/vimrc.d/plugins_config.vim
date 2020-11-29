@@ -150,7 +150,7 @@ nnoremap <silent> <leader>d :GitGutterToggle<cr>
 let g:rg_command = 'g:rg_binary -I --vimgrep'
 "
 noremap <C-p> :GFiles<CR>
-noremap <C-m> :GFiles?<CR>
+noremap <leader>gm :GFiles?<CR>
 noremap <space>p :Rg<CR>
 "noremap <S-p> :call fzf#run({'source': 'git ls-files', 'sink': 'e', 'down': '15%'})<CR>
 
