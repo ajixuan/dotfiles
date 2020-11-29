@@ -54,7 +54,7 @@ augroup END
 set so=3
 
 " Height of the command bar
-set cmdheight=1
+set cmdheight=2
 
 " A buffer becomes hidden when it is abandoned
 set hid
@@ -246,6 +246,23 @@ function! ResizeSplits()
     endif
 endfunction
 
+" Maximize current pane
+nnoremap <leader>m :call MaximizeToggle()<cr>
+function! MaximizeToggle()
+  if exists("s:maximize_session")
+    exec "source " . s:maximize_session
+    call delete(s:maximize_session)
+    unlet s:maximize_session
+    let &hidden=s:maximize_hidden_save
+    unlet s:maximize_hidden_save
+  else
+    let s:maximize_hidden_save = &hidden
+    let s:maximize_session = tempname()
+    set hidden
+    exec "mksession! " . s:maximize_session
+    only
+  endif
+endfunction
 
 
 """"""""""""""""""""""""""""
