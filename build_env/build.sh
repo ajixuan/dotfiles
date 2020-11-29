@@ -227,7 +227,8 @@ build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
     echo "Building nvim"
     curls "${nvim_url}" "${download_dir}/neovim/neovim.tar.gz"
-    MAKE_INSTALL_FLAGS="DESTDIR=${build_dir}" MAKE_FLAGS="CMAKE_INSTALL_PREFIX=${build_dir}" std_build 'neovim'
+    MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=${build_base_dir}" \
+    std_build 'neovim'
   fi
 }
 
