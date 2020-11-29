@@ -129,6 +129,13 @@ function curls {
   fi
 }
 
+# Git checkout
+function git_cl {
+  local _url="${1}"
+  local _output="${2}"
+  [ -d "${_output}" ] && ( cd "${_output}"; git pull ) || git clone "${_url}" "${_output}"
+}
+
 build_tools(){
   # build autoconf
   if ! [ -f "${deps_build_dir}/bin/autoconf" ] ; then
@@ -226,7 +233,8 @@ build_tmux() {
 build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
     echo "Building nvim"
-    curls "${nvim_url}" "${download_dir}/neovim/neovim.tar.gz"
+    #curls "${nvim_url}" "${download_dir}/neovim/neovim.tar.gz"
+    git_cl "${nvim_url}" "${download_dir}/neovim"
     MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=${build_base_dir}" \
     std_build 'neovim'
   fi

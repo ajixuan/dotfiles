@@ -17,5 +17,6 @@ pkgconfig_asc='https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar
 bison_url='https://ftp.gnu.org/gnu/bison/bison-3.7.2.tar.gz'
 bison_asc='https://ftp.gnu.org/gnu/bison/bison-3.7.2.tar.gz.sig'
 # Get the precompiled nvim
-nvim_url='https://github.com/neovim/neovim/archive/nightly.tar.gz'
+#nvim_url='https://github.com/neovim/neovim/archive/nightly.tar.gz'
+nvim_url='git@github.com:neovim/neovim.git'
 
