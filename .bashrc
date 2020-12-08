@@ -9,7 +9,7 @@ PATH=$PATH:$GOPATH/bin
 export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
 export WORKON_HOME="${HOME}/python-virtual-envs/"
-export VIRTUALENV_WRAPPER_PATH="${HOME}/.local/bin/virtualenvwrapper.sh"
+export VIRTUALENV_WRAPPER_PATH="${HOME}/.local/bin/virtualenvwrapper"
 # Pull ghar files automatically
 if which ghar > /dev/null ; then
   dotfiles_dir="$(dirname $(readlink ${BASH_SOURCE[0]}))"
