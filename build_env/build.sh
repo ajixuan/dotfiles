@@ -217,10 +217,9 @@ build_tmux() {
 
     # build tmux
     echo "Building tmux"
-    curls "${tmux_url}" "${download_dir}/tmux/tmux.tar.gz"
+    #curls "${tmux_url}" "${download_dir}/tmux/tmux.tar.gz"
+    git_cl "${tmux_url}" "${download_dir}/tmux"
     ( cd "${download_dir}/tmux"   && \
-      tar xvf ./tmux.tar.gz  && \
-      cd tmux-*/             && \
       LDFLAGS=${build_dir}/lib  \
       ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
       ./autogen.sh && \
@@ -235,7 +234,7 @@ build_nvim(){
     echo "Building nvim"
     #curls "${nvim_url}" "${download_dir}/neovim/neovim.tar.gz"
     git_cl "${nvim_url}" "${download_dir}/neovim"
-    MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=${build_base_dir}" \
+    MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=${build_base_dir}/usr/local" \
     std_build 'neovim'
   fi
 }
