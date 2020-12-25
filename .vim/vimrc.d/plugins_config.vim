@@ -4,20 +4,25 @@ Plug 'junegunn/fzf.vim'
 Plug 'pbogut/fzf-mru.vim'
 Plug 'tpope/vim-fugitive'
 Plug 'neovim/nvim-lspconfig'
+Plug 'git@github.com:rafi/awesome-vim-colorschemes.git'
 "Plug 'nvim-lua/completion-nvim'
 call plug#end()
 
 
+colorscheme gruvbox
+hi Normal guibg=NONE ctermbg=NONE
 
 """"""""""""""""""""""""""""""
 " completion
 """"""""""""""""""""""""""""""
-"autocmd BufEnter * lua require'completion'.on_attach()
+"autocmd! BufEnter * lua require'completion'.on_attach()
 
 """"""""""""""""""""""""""""""
 " nvim lsp
 """"""""""""""""""""""""""""""
-lua require'lspconfig'.rust_analyzer.setup{}
+"lua require'lspconfig'.rust_analyzer.setup{ on_attach=require'completion'.on_attach}
+"set completeopt=menuone,noinsert,noselect
+"let g:completion_matching_strategy_list = ['exact', 'substring', 'fuzzy']
 
 """"""""""""""""""""""""""""""
 " => vim fugitive

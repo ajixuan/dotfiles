@@ -107,7 +107,8 @@ set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ 
 " syntax on will overwite custom configs and use default
 syntax enable
 
-colorscheme desert
+" Setting colorscheme in plugin_config.vim
+"colorscheme desert
 set background=dark
 
 " Set utf8 as standard encoding and en_US as the standard language
@@ -122,7 +123,7 @@ set colorcolumn=80
 " Color groups
 highlight ColorColumn ctermbg=blue
 highlight ExtraWhitespace ctermbg=1 guibg=1
-highlight LspDiagnosticsError ctermfg=1
+highlight LspDiagnosticsError ctermfg=red
 highlight LspDiagnosticsErrorSign ctermfg=1
 highlight LspDiagnosticsWarning ctermfg=yellow
 highlight LspDiagnosticsWarningSign ctermfg=yellow
@@ -241,7 +242,7 @@ augroup ReduceNoise
 augroup END
 
 function! ResizeSplits()
-    if &columns < 100 && winwidth('$') < 50
+    if &columns < 100 && winwidth('$') < 70
       set winwidth=85
       wincmd =
     else
