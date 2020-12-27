@@ -34,6 +34,7 @@ noremap <leader>gp :T git push<CR>
 noremap <leader>gd :Gvdiffsplit!<CR>
 noremap <leader>gh :diffget //2<CR>
 noremap <leader>gl :diffget //3<CR>
+noremap <leader>gb :Gblame<CR>
 
 """"""""""""""""""""""""""""""
 " => bufExplorer plugin
