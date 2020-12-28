@@ -114,7 +114,7 @@ function std_build {
 
   ( cd "${download_dir}/${_pkg_name}" && \
     [ -f "./configure" ] && \
-    ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" && \
+    ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" || \
     make -j4 "${_extra_make_flags[@]}" && \
     make -j4 "${_extra_make_install_flags[@]}" install )
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
@@ -191,10 +191,17 @@ build_tools(){
     std_build 'cmake' "${deps_build_dir}"
   fi
 
+  # build libtool
+  if ! [ -f "${deps_build_dir}/bin/libtool" ] ; then
+    curls "${libtool_url}" "libtool.tar.gz"
+    std_build 'libtool' "${deps_build_dir}"
+  fi
 
   # build bison
-  curls "${bison_url}" "bison.tar.gz"
-  std_build 'bison'
+  if ! [ -f "${deps_build_dir}/bin/yacc" ] ; then
+    curls "${bison_url}" "bison.tar.gz"
+    std_build 'bison' "${deps_build_dir}"
+  fi
 }
 
 install_rust() {
@@ -265,7 +272,8 @@ build_nvim(){
     echo "Building nvim"
     #curls "${nvim_url}" "${download_dir}/neovim/neovim.tar.gz"
     git_cl "${nvim_url}" "${download_dir}/neovim"
-    MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=${build_base_dir}/usr/local" \
+    set -x
+    MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=\"${build_base_dir}/usr/local\"" \
     std_build 'neovim'
   fi
 }
