@@ -19,4 +19,7 @@ bison_asc='https://ftp.gnu.org/gnu/bison/bison-3.7.2.tar.gz.sig'
 # Get the precompiled nvim
 #nvim_url='https://github.com/neovim/neovim/archive/nightly.tar.gz'
 nvim_url='git@github.com:neovim/neovim.git'
+#m4_url='git://git.sv.gnu.org/m4'
+#m4_url='ftp://ftp.gnu.org:21/gnu/m4/m4-1.4.18.tar.gz'
+m4_url='https://gitweb.gentoo.org/repo/proj/prefix.git/snapshot/prefix-487ddf6654a5d25ef22f1d0a98e78d6acf0878ac.tar.gz'
 

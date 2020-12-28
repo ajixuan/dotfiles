@@ -27,12 +27,13 @@ build.sh [-h] [-p rust,ripgrep,tmux,nvim]
   -d BUILD_DIR    build depenednecies to BUILD_DIR directory (${HOME}/tmp/usr/local)
                   by setting this to a different directory you can cleanup
                   the build tools after
+  -c              Clean out cached download artifacts
   -r PACKAGE      TODO: remove specified package
 EOF
   exit 0
 }
 
-while getopts ":hip:b:d:r:" opt; do
+while getopts ":hip:b:d:r:c" opt; do
   case ${opt} in
     h) usage ;;
     i) build_base_dir='' ;;
@@ -52,6 +53,9 @@ while getopts ":hip:b:d:r:" opt; do
     r)
       echo "i didn't make it yet"
       exit 0
+    ;;
+    c)
+      clear_cache=true
     ;;
     *)
       echo "No such option: ${opt}"
@@ -82,10 +86,13 @@ fi
 # restore PATH on exit
 trap "PATH=\"${orig_path}\"" EXIT SIGINT SIGTERM
 
+# Clean cache
+${clear_cache:-false} && rm -rf ${download_dir}
 
 # Create build directories if not exist
 mkdir -p "${build_dir}"
 mkdir -p "${download_dir}"
+
 
 ###############
 # Helpers
@@ -96,11 +103,20 @@ function std_build {
   local _extra_make_flags=(${MAKE_FLAGS:-})
   local _extra_make_install_flags=(${MAKE_INSTALL_FLAGS:-})
 
-  ( cd "${download_dir}/${_pkg_name}"    && \
-    tar xvf ${_pkg_name}.tar.gz          && \
-    cd ${_pkg_name}-*/                   && \
-    [ -f "./configure" ] && ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" ||\
-    make -j4 "${_extra_make_flags[@]}" && make -j4 "${_extra_make_install_flags[@]}" install )
+  if [ ! -d "${download_dir}/${_pkg_name}"* ] ; then
+    tar xvf "${download_dir}/tars/${_pkg_name}.tar.gz" -C "${download_dir}"
+
+    # Rename the directory in the tar, doing it this way because tar
+    # --strip-components 1 is only supported on GNU and BSD tars
+    _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d "/" -f1)"
+    mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
+  fi
+
+  ( cd "${download_dir}/${_pkg_name}" && \
+    [ -f "./configure" ] && \
+    ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" && \
+    make -j4 "${_extra_make_flags[@]}" && \
+    make -j4 "${_extra_make_install_flags[@]}" install )
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
 }
 
@@ -111,6 +127,8 @@ function curls {
   local _asf_url="${3:-}"
   local _import_key_url="${4:-}"
 
+  [ ! -d "${download_dir}/tars" ] && mkdir -p "${download_dir}/tars"
+
   if [ -n "${_import_key_url}" ]; then
     echo "importing key from ${_import_key_url}"
     curl -LsSf "${_import_key_url}" -o /tmp/tmp.key
@@ -118,9 +136,9 @@ function curls {
     rm /tmp/tmp.key
   fi
 
-  if ! [ -f "${_output}" ]; then
+  if ! [ -f "${download_dir}/tars/${_output}" ]; then
     echo "downloading ${_url}"
-    curl -LsSf "${_url}" --create-dirs -o "${_output}"
+    curl -LsSf "${_url}" --create-dirs -o "${download_dir}/tars/${_output}"
     if [ -n "${_asf_url}" ]; then
       echo "verifying with key from ${_asf_url}"
       curl -LsSf "${_asf_url}" --create-dirs -o "${_output}.asf"
@@ -133,37 +151,50 @@ function curls {
 function git_cl {
   local _url="${1}"
   local _output="${2}"
-  [ -d "${_output}" ] && ( cd "${_output}"; git pull ) || git clone "${_url}" "${_output}"
+  [ -d "${_output}" ] && \
+  ( cd "${_output}" ; git pull ) || git clone "${_url}" "${_output}"
 }
 
 build_tools(){
+  # build m4
+  #if ! [ -f "${deps_build_dir}/bin/m4" ] ; then
+  #  # Cannot clone from git because building m4 from git src requires autconf,
+  #  # while building autoconf requires m4
+  #  #git_cl "${m4_url}" "${download_dir}/m4"
+  #  #( cd ${download_dir}/m4/ && git checkout -b branch-1.4 origin/branch-1.4 )
+  #  curls "${m4_url}" "m4.tar.gz"
+  #  std_build 'm4' "${deps_build_dir}"
+  #fi
+
   # build autoconf
   if ! [ -f "${deps_build_dir}/bin/autoconf" ] ; then
-    curls "${autoconf_url}" "${download_dir}/autoconf/autoconf.tar.gz"
+    curls "${autoconf_url}" "autoconf.tar.gz"
     std_build 'autoconf' "${deps_build_dir}"
   fi
 
+
   # build automake
   if ! [ -f "${deps_build_dir}/bin/aclocal" ] ; then
-    curls "${automake_url}" "${download_dir}/automake/automake.tar.gz"
+    curls "${automake_url}" "automake.tar.gz"
     std_build 'automake' "${deps_build_dir}"
   fi
 
   # build pkg-config
   if ! [ -f "${deps_build_dir}/bin/pkg-config" ] ; then
-    curls "${pkgconfig_url}" "${download_dir}/pkg-config/pkg-config.tar.gz"
+    curls "${pkgconfig_url}" "pkg-config.tar.gz"
     CONFIG_FLAGS='--with-internal-glib' std_build 'pkg-config' "${deps_build_dir}"
   fi
 
   # build cmake
   if ! [ -f "${deps_build_dir}/bin/cmake" ] ; then
-    curls "${cmake_url}" "${download_dir}/cmake/cmake.tar.gz"
+    curls "${cmake_url}" "cmake.tar.gz"
     std_build 'cmake' "${deps_build_dir}"
   fi
 
+
   # build bison
-  # curls "${bison_url}" "${download_dir}/bison/bison.tar.gz"
-  # std_build 'bison'
+  curls "${bison_url}" "bison.tar.gz"
+  std_build 'bison'
 }
 
 install_rust() {
@@ -200,13 +231,13 @@ build_tmux() {
 
     # build libevent
     if ! [ -f ${build_dir}/lib/libevent.a ]; then
-      curls "${libevent_url}" "${download_dir}/libevent/libevent.tar.gz"
+      curls "${libevent_url}" "libevent.tar.gz"
       CONFIG_FLAGS="--enable-shared" std_build 'libevent'
     fi
 
     # build ncurses
     if ! [ -f "${build_dir}/lib/libncurses.a" ]; then
-      curls "${ncurses_url}" "${download_dir}/ncurses/ncurses.tar.gz" "${ncureses_asc}" \
+      curls "${ncurses_url}" "ncurses.tar.gz" "${ncureses_asc}" \
       'https://invisible-island.net/public/dickey-invisible-island.txt'
       CONFIG_FLAGS="--with-shared     \
                     --with-termlib    \
