@@ -14,17 +14,18 @@ set -e
 
 # vars
 script_dir="$(dirname ${BASH_SOURCE[0]})"
+work_dir="${script_dir}/../"
 plug_url='https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
 rust_analyzer_url='https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-linux'
 
 echo "im a snowman ☃"
-mkdir -p "${script_dir}/autoload"
-mkdir -p "${script_dir}/plugged"
-mkdir -p "${script_dir}/syntax"
+mkdir -p "${work_dir}/.vim/autoload"
+mkdir -p "${work_dir}/.vim/plugged"
+mkdir -p "${work_dir}/.vim/syntax"
 
 # Get Plug
-if [ ! -f "${script_dir}/autoload/plug.vim" ]; then
-  curl -fsSL "${plug_url}" --create-dirs -o "${script_dir}/autoload/plug.vim"
+if [ ! -f "${work_dir}/autoload/plug.vim" ]; then
+  curl -fsSL "${plug_url}" --create-dirs -o "${work_dir}/.vim/autoload/plug.vim"
 fi
 
 # rust analyzer
