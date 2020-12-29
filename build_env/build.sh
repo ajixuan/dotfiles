@@ -255,7 +255,7 @@ build_tmux() {
 
     # build tmux
     echo "Building tmux"
-    #curls "${tmux_url}" "${download_dir}/tmux/tmux.tar.gz"
+    #curls "${tmux_url}" "tmux.tar.gz"
     git_cl "${tmux_url}" "${download_dir}/tmux"
     ( cd "${download_dir}/tmux"   && \
       LDFLAGS=${build_dir}/lib  \
@@ -269,8 +269,12 @@ build_tmux() {
 
 build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
+    echo "Building nvim dependencies"
+    curls "${gettext_url}" "gettext.tar.gz"
+    std_build 'gettext'
+
     echo "Building nvim"
-    #curls "${nvim_url}" "${download_dir}/neovim/neovim.tar.gz"
+    #curls "${nvim_url}" "neovim.tar.gz"
     git_cl "${nvim_url}" "${download_dir}/neovim"
     set -x
     MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=\"${build_base_dir}/usr/local\"" \
