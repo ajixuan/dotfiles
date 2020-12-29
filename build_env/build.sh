@@ -5,7 +5,7 @@ set -e
 # Default variables
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
-build_base_dir="${BUILD_DIR:-${HOME}/tmp}"
+build_base_dir="${BUILD_DIR:-${HOME}/local_builds}"
 build_list=(rust ripgrep tmux nvim)
 
 usage() {
@@ -44,7 +44,8 @@ while getopts ":hip:b:d:r:c" opt; do
     ;;
     d)
       if [ -d ${OPTARG} ]; then
-        dep_build_dir="${OPTARG}"
+        echo "setting deps_build_dir to ${OPTARG}"
+        deps_build_dir="${OPTARG}"
       else
         echo "no directory ${OPTARG}"
         exit 1
@@ -65,10 +66,17 @@ while getopts ":hip:b:d:r:c" opt; do
 done
 
 # Environment Varibales
-download_dir="${DOWNLOAD_DIR:-${build_base_dir}/artifacts}"
+download_dir="${DOWNLOAD_DIR:-${build_base_dir}/tmp/artifacts}"
 build_dir="${build_base_dir}/usr/local"
 orig_path="${PATH}"
 export PATH="/usr/bin:${build_dir}/bin"
+
+# Put build_dir and deps_build_dir onto path
+if [ -z "${deps_build_dir}" ]; then
+  deps_build_dir="${build_dir}"
+else
+  export PATH="${PATH}:${deps_build_dir}/bin"
+fi
 
 # By default rust will install cargo to ${HOME}
 # If not installing rust to system, install rust to temporary directory
@@ -77,8 +85,6 @@ if [[ ! ${build_dir} =~ ^/usr.*  ]]; then
   export RUSTUP_HOME="${build_dir}/cargo"
   export PATH="${PATH}:${RUSTUP_HOME}/bin"
 fi
-
-[ -z "${dep_build_dir}" ] && deps_build_dir="${build_dir}"
 
 # Source build variables
 . "${script_dir}/build_env.sh"
@@ -207,9 +213,8 @@ build_tools(){
 install_rust() {
   if ! [ -f "${build_dir}/cargo/bin/cargo" ] ; then
     echo "Installing rust"
-
-
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
+    source "$HOME/.cargo/env"
     rustup toolchain install nightly --allow-downgrade --profile minimal --component cargo
 
     # If building in system standard directory, also write cargo home
