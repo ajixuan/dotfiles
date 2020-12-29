@@ -269,14 +269,15 @@ build_tmux() {
 
 build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
-    echo "Building nvim dependencies"
-    curls "${gettext_url}" "gettext.tar.gz"
-    std_build 'gettext'
+    if ! [ -f "${build_dir}/bin/gettextize" ] ; then
+      echo "Building nvim dependency: gettext"
+      curls "${gettext_url}" "gettext.tar.gz"
+      std_build 'gettext'
+    fi
 
     echo "Building nvim"
     #curls "${nvim_url}" "neovim.tar.gz"
     git_cl "${nvim_url}" "${download_dir}/neovim"
-    set -x
     MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=\"${build_base_dir}/usr/local\"" \
     std_build 'neovim'
   fi
