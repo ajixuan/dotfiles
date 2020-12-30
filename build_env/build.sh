@@ -269,12 +269,19 @@ build_tmux() {
     # build tmux
     echo "Building tmux"
     #curls "${tmux_url}" "tmux.tar.gz"
+    # Note on building tmux:
+    # - Since deps_build_dir could be set in a non standard directory, this var
+    #   is set to where *.pc files are found. they can usually be found in the
+    #   /lib directory
+    # - when the dependencies are built above, make sure their pkgconfig manifest
+    #   files (*.pc files) have the correct prefix in them. Otherwise setting
+    #   PKG_CONFIG_PATH won't be able to find the correct header files
     git_cl "${tmux_url}" "${download_dir}/tmux"
     ( cd "${download_dir}/tmux"   && \
       LDFLAGS=${deps_build_dir}/lib  \
       ACLOCAL_PATH=${deps_build_dir}/share/aclocal-1.16 \
       ./autogen.sh && \
-      PKG_CONFIG=${deps_build_dir}/bin/pkg-config \
+      PKG_CONFIG_PATH=${deps_build_dir}/lib/pkgconfig \
       ./configure --enable-static --prefix=${build_dir}  && \
       make && make install)
   fi
