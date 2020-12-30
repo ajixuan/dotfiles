@@ -7,6 +7,7 @@ script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
 build_base_dir="${BUILD_DIR:-${HOME}/local_builds}"
 build_list=(rust ripgrep tmux nvim)
+job_count=4
 
 usage() {
   cat <<EOF
@@ -28,16 +29,18 @@ build.sh [-h] [-p rust,ripgrep,tmux,nvim,fzf]
                   by setting this to a different directory you can cleanup
                   the build tools after
   -c              Clean out cached download artifacts
+  -t JOB_COUNT    Number of concurrent jobs to spawn, default 4
   -r PACKAGE      TODO: remove specified package
 EOF
   exit 0
 }
 
-while getopts ":hip:b:d:r:c" opt; do
+while getopts ":hip:b:d:r:c:t:" opt; do
   case ${opt} in
     h) usage ;;
     i) build_base_dir='' ;;
     p) build_list=(${OPTARG//,/ }) ;;
+    t) job_count="${OPTARG}"       ;;
     b)
       echo "setting build_dir to ${OPTARG}"
       build_base_dir="${OPTARG}"
@@ -84,6 +87,8 @@ if [[ ! ${build_dir} =~ ^/usr.*  ]]; then
   export CARGO_HOME="${build_dir}/cargo"
   export RUSTUP_HOME="${build_dir}/cargo"
   export PATH="${PATH}:${RUSTUP_HOME}/bin"
+else
+  export CARGO_HOME="${HOME}/.cargo"
 fi
 
 # Source build variables
@@ -121,8 +126,8 @@ function std_build {
   ( cd "${download_dir}/${_pkg_name}" && \
     [ -f "./configure" ] && \
     ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" || \
-    make -j4 "${_extra_make_flags[@]}" && \
-    make -j4 "${_extra_make_install_flags[@]}" install )
+    make -j${job_count} "${_extra_make_flags[@]}" && \
+    make -j${job_count} "${_extra_make_install_flags[@]}" install )
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
 }
 
@@ -213,7 +218,7 @@ install_rust() {
   if ! [ -f "${build_dir}/cargo/bin/cargo" ] ; then
     echo "Installing rust"
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
-    source "$HOME/.cargo/env"
+    source "${CARGO_HOME}/env"
     rustup toolchain install nightly --allow-downgrade --profile minimal --component cargo
 
     # If building in system standard directory, also write cargo home
