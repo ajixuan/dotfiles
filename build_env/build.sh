@@ -250,13 +250,13 @@ build_tmux() {
   if ! [ -f "${build_dir}/bin/tmux" ] ; then
 
     # build libevent
-    if ! [ -f ${build_dir}/lib/libevent.a ]; then
+    if ! [ -f ${deps_build_dir}/lib/libevent.a ]; then
       curls "${libevent_url}" "libevent.tar.gz"
       CONFIG_FLAGS="--enable-shared" std_build 'libevent' "${deps_build_dir}"
     fi
 
     # build ncurses
-    if ! [ -f "${build_dir}/lib/libncurses.a" ]; then
+    if ! [ -f "${deps_build_dir}/lib/libncurses.a" ]; then
       curls "${ncurses_url}" "ncurses.tar.gz" "${ncureses_asc}" \
       'https://invisible-island.net/public/dickey-invisible-island.txt'
       CONFIG_FLAGS="--with-shared     \
