@@ -252,7 +252,7 @@ build_tmux() {
     # build libevent
     if ! [ -f ${build_dir}/lib/libevent.a ]; then
       curls "${libevent_url}" "libevent.tar.gz"
-      CONFIG_FLAGS="--enable-shared" std_build 'libevent'
+      CONFIG_FLAGS="--enable-shared" std_build 'libevent' "${deps_build_dir}"
     fi
 
     # build ncurses
@@ -262,8 +262,8 @@ build_tmux() {
       CONFIG_FLAGS="--with-shared     \
                     --with-termlib    \
                     --enable-pc-files \
-                    --with-pkg-config-libdir=${build_dir}/lib/pkgconfig" \
-      std_build 'ncurses'
+                    --with-pkg-config-libdir=${deps_build_dir}/lib/pkgconfig" \
+      std_build 'ncurses' "${deps_build_dir}"
     fi
 
     # build tmux
@@ -271,10 +271,10 @@ build_tmux() {
     #curls "${tmux_url}" "tmux.tar.gz"
     git_cl "${tmux_url}" "${download_dir}/tmux"
     ( cd "${download_dir}/tmux"   && \
-      LDFLAGS=${build_dir}/lib  \
-      ACLOCAL_PATH=${build_dir}/share/aclocal-1.16 \
+      LDFLAGS=${deps_build_dir}/lib  \
+      ACLOCAL_PATH=${deps_build_dir}/share/aclocal-1.16 \
       ./autogen.sh && \
-      PKG_CONFIG=${build_dir}/bin/pkg-config \
+      PKG_CONFIG=${deps_build_dir}/bin/pkg-config \
       ./configure --enable-static --prefix=${build_dir}  && \
       make && make install)
   fi
@@ -285,7 +285,7 @@ build_nvim(){
     if ! [ -f "${build_dir}/bin/gettextize" ] ; then
       echo "Building nvim dependency: gettext"
       curls "${gettext_url}" "gettext.tar.gz"
-      std_build 'gettext'
+      std_build 'gettext' "${deps_build_dir}"
     fi
 
     echo "Building nvim"
