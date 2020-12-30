@@ -11,14 +11,14 @@ build_list=(rust ripgrep tmux nvim)
 usage() {
   cat <<EOF
 Currently installable packages:
-rust, ripgrep, tmux, nvim
+rust, ripgrep, tmux, nvim, fzf
 
 By default the script will not install deps to system, but will instead install
 everything to a temporary directory (default ${HOME}/tmp/usr/local). When
 passing in the -i flag all packages will be installed to the system directory
 (/usr/local/)
 
-build.sh [-h] [-p rust,ripgrep,tmux,nvim]
+build.sh [-h] [-p rust,ripgrep,tmux,nvim,fzf]
   -h              print help message
   -i              short cut key to install to build packages to system
                   directory (/usr/local)
@@ -178,7 +178,6 @@ build_tools(){
     std_build 'autoconf' "${deps_build_dir}"
   fi
 
-
   # build automake
   if ! [ -f "${deps_build_dir}/bin/aclocal" ] ; then
     curls "${automake_url}" "automake.tar.gz"
@@ -226,7 +225,7 @@ install_rust() {
   fi
 }
 
-build_ripgrep(){
+build_ripgrep() {
   if ! [ -f "${build_dir}/bin/rg" ] ; then
     install_rust
 
@@ -235,6 +234,15 @@ build_ripgrep(){
     ( cd "${download_dir}/ripgrep" && \
       cargo build --release && \
       cp ./target/release/rg "${build_dir}/bin/" )
+  fi
+}
+
+
+install_fzf() {
+  if ! [ -f "${build_dir}/bin/fzf" ] ; then
+    echo "Installing fzf to ${HOME}/.fzf"
+    git_cl "${fzf_url}" "${HOME}/.fzf"
+    ( cd ${HOME}/.fzf && ./install --all )
   fi
 }
 
@@ -288,24 +296,12 @@ build_nvim(){
   fi
 }
 
-build_tools
+[[ "${build_list[@]}" =~ fzf ]]  && install_fzf
 [[ "${build_list[@]}" =~ rust ]] && install_rust
-[[ "${build_list[@]}" =~ ripgrep ]] && build_ripgrep
-[[ "${build_list[@]}" =~ tmux ]] && build_tmux
-[[ "${build_list[@]}" =~ nvim ]] && build_nvim
+if [[ "${build_list[@]}" =~ ripgrep|tmux|nvim ]]; then
+  build_tools
+  [[ "${build_list[@]}" =~ ripgrep ]] && build_ripgrep
+  [[ "${build_list[@]}" =~ tmux ]] && build_tmux
+  [[ "${build_list[@]}" =~ nvim ]] && build_nvim
+fi
 
-# ctags
-#if ! [ -f "${build_dir}/bin/ctags" ] ; then
-#  git clone "${ctags_url}" "${download_dir}/ctags"
-#  ( cd "${download_dir}" && \
-#      "./autogen.sh" && \
-#      "./configure" --prefix="${HOME}" && \
-#      make && \
-#      make install )
-#fi
-
-# cleanup if path is temporary
-#rm -rf "${download_dir}"
-
-# Install to your machine with rsync
-# rsync -a -u ${build_dir} /usr/local
