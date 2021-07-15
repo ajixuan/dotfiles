@@ -189,7 +189,7 @@ map 0 ^
 map <Nul> ?
 
 " Disable highlight when <leader><cr> is pressed
-map <silent> <leader><cr> :noh<cr>
+map <silent> <leader><cr> :nohl<cr>
 
 " Smart way to move between windows
 map <C-j> <C-W>j
@@ -198,10 +198,10 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " Quick resize windows
-nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/5)<CR>
-nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 5/3)<CR>
-nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 2/5)<CR>
-nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 5/3)<CR>
+nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) - 25)<CR>
+nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) + 25)<CR>
+nnoremap <silent> <leader>j :exe "resize " . (winheight(0) + 15)<CR>
+nnoremap <silent> <leader>k :exe "resize " . (winheight(0) - 15)<CR>
 
 " VSP and SP
 map <leader>\| :vsp<CR><c-p><CR>
@@ -242,14 +242,15 @@ augroup ReduceNoise
 augroup END
 
 function! ResizeSplits()
-    if &columns < 100 && winwidth('$') < 70
+    echo winwidth(winnr('#'))
+    if winwidth(winnr('#')) < 70
       set winwidth=85
-      wincmd =
-    else
-      set winwidth=50
       wincmd =
     endif
 endfunction
+
+" Reset pane positions
+map <leader>= <C-W>=
 
 " Maximize current pane
 nnoremap <leader>m :call MaximizeToggle()<cr>
@@ -288,11 +289,6 @@ vnoremap > >gv
 " map sort function to a Ctrl-Down
 vnoremap <C-Down> :sort<CR>
 
-" Bind nohl
-" Removes highlight of your last search
-noremap <C-n> :nohl<CR>
-vnoremap <C-n> :nohl<CR>
-inoremap <C-n> <esc>:nohl<CR>i
 
 " Retab lines
 " noremap tt :call ResizeTabs()<CR>
