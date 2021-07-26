@@ -82,5 +82,12 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
+# Kubernetes
+# Merge kube config files
+for contextFile in `find "${HOME}/.kube" -type f -name "*.config"`
+do
+    export KUBECONFIG="$contextFile:$KUBECONFIG"
+done
+
 #fzf
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
