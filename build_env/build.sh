@@ -167,15 +167,6 @@ function git_cl {
 }
 
 build_tools(){
-  # build m4
-  #if ! [ -f "${deps_build_dir}/bin/m4" ] ; then
-  #  # Cannot clone from git because building m4 from git src requires autconf,
-  #  # while building autoconf requires m4
-  #  #git_cl "${m4_url}" "${download_dir}/m4"
-  #  #( cd ${download_dir}/m4/ && git checkout -b branch-1.4 origin/branch-1.4 )
-  #  curls "${m4_url}" "m4.tar.gz"
-  #  std_build 'm4' "${deps_build_dir}"
-  #fi
 
   # build autoconf
   if ! [ -f "${deps_build_dir}/bin/autoconf" ] ; then
@@ -207,6 +198,18 @@ build_tools(){
     std_build 'libtool' "${deps_build_dir}"
   fi
 
+  # build m4
+  #if ! [ -f "${deps_build_dir}/bin/m4" ] ; then
+  #  curls "${m4_url}" "m4.tar.gz"
+  #  std_build 'm4' "${deps_build_dir}"
+  #fi
+
+  # build gettext
+  if ! [ -f "${build_dir}/bin/gettextize" ] ; then
+    curls "${gettext_url}" "gettext.tar.gz"
+    std_build 'gettext' "${deps_build_dir}"
+  fi
+  
   # build bison
   if ! [ -f "${deps_build_dir}/bin/yacc" ] ; then
     curls "${bison_url}" "bison.tar.gz"
@@ -294,12 +297,6 @@ build_tmux() {
 
 build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
-    if ! [ -f "${build_dir}/bin/gettextize" ] ; then
-      echo "Building nvim dependency: gettext"
-      curls "${gettext_url}" "gettext.tar.gz"
-      std_build 'gettext' "${deps_build_dir}"
-    fi
-
     echo "Building nvim"
     #curls "${nvim_url}" "neovim.tar.gz"
     git_cl "${nvim_url}" "${download_dir}/neovim"
