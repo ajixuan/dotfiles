@@ -107,6 +107,29 @@ mkdir -p "${download_dir}"
 
 ###############
 # Helpers
+function cmake_build {
+  local _pkg_name="${1}"
+  local _build_dir="${2:-${build_dir}}"
+  local _extra_config_flags=(${CONFIG_FLAGS:-})
+  local _extra_make_flags=(${MAKE_FLAGS:-})
+  local _extra_make_install_flags=(${MAKE_INSTALL_FLAGS:-})
+
+  if [ ! -d "${download_dir}/${_pkg_name}"* ] ; then
+    tar xvf "${download_dir}/tars/${_pkg_name}.tar.gz" -C "${download_dir}"
+
+    # Rename the directory in the tar, doing it this way because tar
+    # --strip-components 1 is only supported on GNU and BSD tars
+    _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d "/" -f1)"
+    mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
+  fi
+
+  ( cd "${download_dir}/${_pkg_name}" && 
+    cmake  "${_extra_config_flags[@]}" --install . --prefix ${_build_dir} && \
+    #cmake -j${job_count} "${_extra_make_flags[@]}" && \
+    make -j${job_count} "${_extra_make_install_flags[@]}" install )
+  unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
+}
+
 function std_build {
   local _pkg_name="${1}"
   local _build_dir="${2:-${build_dir}}"
@@ -199,6 +222,7 @@ build_tools(){
   fi
 
   # build m4
+  # I give up trying to build m4
   #if ! [ -f "${deps_build_dir}/bin/m4" ] ; then
   #  curls "${m4_url}" "m4.tar.gz"
   #  std_build 'm4' "${deps_build_dir}"
@@ -214,6 +238,13 @@ build_tools(){
   if ! [ -f "${deps_build_dir}/bin/yacc" ] ; then
     curls "${bison_url}" "bison.tar.gz"
     std_build 'bison' "${deps_build_dir}"
+  fi
+
+  # build unzip
+  if ! [ -f "${build_dir}/bin/unzip" ] ; then
+    echo "Installing unzip"
+    git_cl "${unzip_url}" "${download_dir}/unzip"
+    cmake_build 'unzip' "${deps_build_dir}"
   fi
 }
 
