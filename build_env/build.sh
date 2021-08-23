@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 # Script for quickly compiling tools
 set -e
 
@@ -123,7 +123,7 @@ function cmake_build {
     mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
   fi
 
-  ( cd "${download_dir}/${_pkg_name}" && 
+  ( cd "${download_dir}/${_pkg_name}" &&
     cmake  "${_extra_config_flags[@]}" --install . --prefix ${_build_dir} && \
     #cmake -j${job_count} "${_extra_make_flags[@]}" && \
     make -j${job_count} "${_extra_make_install_flags[@]}" install )
@@ -233,7 +233,7 @@ build_tools(){
     curls "${gettext_url}" "gettext.tar.gz"
     std_build 'gettext' "${deps_build_dir}"
   fi
-  
+
   # build bison
   if ! [ -f "${deps_build_dir}/bin/yacc" ] ; then
     curls "${bison_url}" "bison.tar.gz"
