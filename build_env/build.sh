@@ -72,7 +72,7 @@ done
 download_dir="${DOWNLOAD_DIR:-${build_base_dir}/tmp/artifacts}"
 build_dir="${build_base_dir}/usr/local"
 orig_path="${PATH}"
-export PATH="/usr/bin:${build_dir}/bin"
+export PATH="${PATH}:/usr/bin:${build_dir}/bin"
 
 # Put build_dir and deps_build_dir onto path
 if [ -z "${deps_build_dir}" ]; then
@@ -329,7 +329,6 @@ build_tmux() {
 build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
     echo "Building nvim"
-    #curls "${nvim_url}" "neovim.tar.gz"
     git_cl "${nvim_url}" "${download_dir}/neovim"
     MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=\"${build_base_dir}/usr/local\"" \
     std_build 'neovim'
