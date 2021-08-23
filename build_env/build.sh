@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 # Script for quickly compiling tools
 set -e
 
@@ -19,18 +19,18 @@ everything to a temporary directory (default ${HOME}/tmp/usr/local). When
 passing in the -i flag all packages will be installed to the system directory
 (/usr/local/)
 
-build.sh [-h] [-p rust,ripgrep,tmux,nvim,fzf]
-  -h              print help message
-  -i              short cut key to install to build packages to system
-                  directory (/usr/local)
-  -p PACKAGE      comma separated list of package to install
-  -b BUILD_DIR    build packages to BUILD_DIR directory (${HOME}/tmp/usr/local)
-  -d BUILD_DIR    build depenednecies to BUILD_DIR directory (${HOME}/tmp/usr/local)
-                  by setting this to a different directory you can cleanup
-                  the build tools after
-  -c              Clean out cached download artifacts
-  -t JOB_COUNT    Number of concurrent jobs to spawn, default 4
-  -r PACKAGE      TODO: remove specified package
+build.sh [-h] [-p rust,rigrep,tmux,nvim,fzf]
+  -h                     print help message
+  -i                     short cut key to install to build packages to system
+                         directory (/usr/local)
+  -p PACKAGE             comma separated list of package to install
+  -b BUILD_DIR           build packages to BUILD_DIR directory (${HOME}/tmp/usr/local)
+  -d DEPENDENCIES_DIR    build depenednecies to DEPENDENCIES_DIR (${HOME}/tmp/usr/local)
+                         setting this to a different directory allows quick cleanup
+                         of build dependencies with the -c flag
+  -c                     Clean out cached download artifacts
+  -t JOB_COUNT           Number of concurrent jobs to spawn, default 4
+  -r PACKAGE             TODO: remove specified package
 EOF
   exit 0
 }
