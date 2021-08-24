@@ -1,10 +1,6 @@
 # dotfiles
-My dotfiles
-
-## nvim
-* install nvim
-* install plugins with :PlugInstall
-
-## tmux
-mv compiled tmux to $HOME/bin
+My dotfiles. Install via ghar
+```
+build_env/set_environment.sh
+```
 
