@@ -4,7 +4,7 @@ Plug 'junegunn/fzf.vim'
 Plug 'pbogut/fzf-mru.vim'
 Plug 'tpope/vim-fugitive'
 Plug 'neovim/nvim-lspconfig'
-Plug 'git@github.com:rafi/awesome-vim-colorschemes.git'
+Plug 'https://github.com/rafi/awesome-vim-colorschemes.git'
 "Plug 'nvim-lua/completion-nvim'
 call plug#end()
 
