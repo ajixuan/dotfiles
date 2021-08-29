@@ -5,12 +5,12 @@ To bootstrap a new system, these are the steps to run:
 localectl set-keymap dvorak
 pacman -Syy
 pacman -S git
-git clone https://github.com/ajixuan/dotfiles.git
-cd dotfiles/alis/
+git clone https://github.com/ajixuan/bootstrap.git
+cd bootstrap/alis/
 ./alis.sh
 ```
 
-Before you are able to run the build scripts you need to first
+Setup profile:
 ```
 build_env/set_environment.sh
 ```
