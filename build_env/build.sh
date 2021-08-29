@@ -124,8 +124,7 @@ function cmake_build {
   fi
 
   ( cd "${download_dir}/${_pkg_name}" &&
-    cmake  "${_extra_config_flags[@]}" --install . --prefix ${_build_dir} && \
-    #cmake -j${job_count} "${_extra_make_flags[@]}" && \
+    cmake  "${_extra_config_flags[@]}" -DCMAKE_INSTALL_PREFIX=${_build_dir} ./ && \
     make -j${job_count} "${_extra_make_install_flags[@]}" install )
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
 }
@@ -242,7 +241,7 @@ build_tools(){
 
   # build unzip
   if ! [ -f "${build_dir}/bin/unzip" ] ; then
-    echo "Installing unzip"
+    echo "Building unzip"
     git_cl "${unzip_url}" "${download_dir}/unzip"
     cmake_build 'unzip' "${deps_build_dir}"
   fi

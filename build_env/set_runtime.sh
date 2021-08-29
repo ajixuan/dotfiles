@@ -15,13 +15,17 @@ set -e
 # vars
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 work_dir="${WORK_DIR:-${HOME}}"
+
+# URLs
 plug_url='https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
 ghar_url='https://github.com/philips/ghar.git'
 
 echo "im a snowman ☃"
+export PATH="${PATH}:${work_dir}/bin"
 mkdir -p "${work_dir}/.vim/autoload"
 mkdir -p "${work_dir}/.vim/plugged"
 mkdir -p "${work_dir}/.vim/syntax"
+mkdir -p "${work_dir}/bin"
 
 if ${build}; then
   echo "Building tools"
@@ -43,5 +47,5 @@ fi
 
 # Install dotfiles
 echo "Installing dotfiles"
-ghar add "$(git remote get-url origin)" mydotfiles
-ghar install mydotfiles
+ghar add "$(git remote get-url origin)" ajidotfiles
+ghar install ajidotfiles
