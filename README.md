@@ -6,7 +6,7 @@ localectl set-keymap dvorak
 pacman -Syy
 pacman -S git
 git clone https://github.com/ajixuan/bootstrap.git
-cd dotfiles/alis/
+cd bootstrap/alis/
 ./alis.sh
 ```
 
