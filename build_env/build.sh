@@ -245,6 +245,14 @@ build_tools(){
     git_cl "${unzip_url}" "${download_dir}/unzip"
     cmake_build 'unzip' "${deps_build_dir}"
   fi
+
+  # build freetype
+  if ! [ -f "${build_dir}/lib/libfreetype.so" ]; then
+    echo "Building freetype2"
+    curls "${freetype_url}" "freetype.tar.gz"
+    std_build 'freetype' "${deps_build_dir}"
+  fi
+
 }
 
 install_rust() {
@@ -334,12 +342,24 @@ build_nvim(){
   fi
 }
 
+build_alacritty(){
+  if ! [ -f "${build_dir}/bin/alacritty" ] ; then
+    echo "Building alacritty"
+    git_cl "${alacritty_url}" "${download_dir}/alacritty"
+    ( cd "${download_dir}/alacritty" &&
+      cargo build --release &&
+      [ ! -f ./target/release/alacritty ] && echo "Error: alacritty failed to build" && exit 1 ||
+      mv './target/release/alacritty' "${build_dir}/bin/" )
+  fi
+}
+
 [[ "${build_list[@]}" =~ fzf ]]  && install_fzf
 [[ "${build_list[@]}" =~ rust ]] && install_rust
-if [[ "${build_list[@]}" =~ ripgrep|tmux|nvim ]]; then
+if [[ "${build_list[@]}" =~ ripgrep|tmux|nvim|alacritty ]]; then
   build_tools
   [[ "${build_list[@]}" =~ ripgrep ]] && build_ripgrep
   [[ "${build_list[@]}" =~ tmux ]] && build_tmux
   [[ "${build_list[@]}" =~ nvim ]] && build_nvim
+  [[ "${build_list[@]}" =~ alacritty ]] && build_alacritty
 fi
 
