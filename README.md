@@ -10,8 +10,24 @@ cd bootstrap/alis/
 ./alis.sh
 ```
 
-Setup profile:
+##Archlinux Install:
+1. Insert the Archlinux iso media
+2. Download this dotfiles profile from github
+3. Use alis to quickly bootstrap an arch linux instance
+   Standard install configurations can be changed in the alis.conf
+
+##VirtualBox Setup
+To make VirtualBox interface usable, the VBoxGuestAdditions is indispensable.
+1. Download latest VBoxGuestAdditions
+2. Insert the iso into optical drive
+3. Mount optical drive by command `sudo mount /dev/cdrom /mnt/`
+4. `cd /mnt && sudo sh ./VBoxLinuxAdditions.run`
+
+##Compile tools:
+Note: need atleast 10GB of disk space
 ```
 build_env/set_environment.sh
 ```
 
+##Setup Vim
+Start up vim and run `:PlugInstall`
