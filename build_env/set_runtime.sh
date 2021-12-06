@@ -30,7 +30,7 @@ mkdir -p "${work_dir}/.vim/syntax"
 mkdir -p "${work_dir}/bin"
 
 echo "Building tools"
-. "${script_dir}/build.sh" "${build_tools[*]}"
+. "${script_dir}/build.sh" -i "${build_tools[*]}"
 
 # Get Plug
 if [ ! -f "${work_dir}/autoload/plug.vim" ]; then

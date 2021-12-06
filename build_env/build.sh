@@ -7,6 +7,7 @@ script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
 build_base_dir="${BUILD_DIR:-${HOME}/local_builds}"
 build_list=(rust ripgrep tmux nvim)
+export_path=false
 job_count=4
 
 usage() {
@@ -21,8 +22,7 @@ passing in the -i flag all packages will be installed to the system directory
 
 build.sh [-h] [-p rust,rigrep,tmux,nvim,fzf]
   -h                     print help message
-  -i                     short cut key to install to build packages to system
-                         directory (/usr/local)
+  -i                     update PATH to build_dir/bin
   -p PACKAGE             comma separated list of package to install
   -b BUILD_DIR           build packages to BUILD_DIR directory (${HOME}/tmp/usr/local)
   -d DEPENDENCIES_DIR    build depenednecies to DEPENDENCIES_DIR (${HOME}/tmp/usr/local)
@@ -38,7 +38,7 @@ EOF
 while getopts ":hip:b:d:r:c:t:" opt; do
   case ${opt} in
     h) usage ;;
-    i) build_base_dir='' ;;
+    i) export_path=true ;;
     p) build_list=(${OPTARG//,/ }) ;;
     t) job_count="${OPTARG}"       ;;
     b)
@@ -362,4 +362,10 @@ if [[ "${build_list[@]}" =~ ripgrep|tmux|nvim|alacritty ]]; then
   [[ "${build_list[@]}" =~ nvim ]] && build_nvim
   [[ "${build_list[@]}" =~ alacritty ]] && build_alacritty
 fi
+
+if ${export_path} ; then
+  path_string='PATH=${PATH}:'"${build_dir}/bin"
+  grep -qxF "${path_string}" "${HOME}/.bashrc" || echo ${path_string} >> "${HOME}/.bashrc"
+fi
+
 
