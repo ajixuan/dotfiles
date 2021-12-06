@@ -15,6 +15,8 @@ set -e
 # vars
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 work_dir="${WORK_DIR:-${HOME}}"
+build_tools=('-p' ${@})
+
 
 # URLs
 plug_url='https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
@@ -27,10 +29,8 @@ mkdir -p "${work_dir}/.vim/plugged"
 mkdir -p "${work_dir}/.vim/syntax"
 mkdir -p "${work_dir}/bin"
 
-if ${build}; then
-  echo "Building tools"
-  . "${script_dir}/build.sh"
-fi
+echo "Building tools"
+. "${script_dir}/build.sh" "${build_tools[*]}"
 
 # Get Plug
 if [ ! -f "${work_dir}/autoload/plug.vim" ]; then
