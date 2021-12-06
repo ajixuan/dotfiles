@@ -8,8 +8,6 @@ pacman -S git
 git clone https://github.com/ajixuan/bootstrap.git
 cd bootstrap/alis/
 ./alis.sh
-./alis-packages.sh
-./alis-reboot.sh
 ```
 
 ##VirtualBox Setup
