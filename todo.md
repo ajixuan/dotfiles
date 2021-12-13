@@ -5,13 +5,12 @@
     [] do not auto create tab if cancelling terminal command
     [] better fuzzy search command for none git files
     [] git status bar
-    [] md folding
 21112020
   auto window-management:
     [x] alacritty
     [] wmctrl
-22112020
-  [] migrate to zsh
 23112020
   [x] fix build.sh bugs
-  []  build neovim duplicates build_dir
+  [x]  build neovim duplicates build_dir
+12122021
+  [] missing deps: fontconfig(alacritty),lua(neovim)
