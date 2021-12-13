@@ -6,7 +6,7 @@ set -e
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
 build_base_dir="${BUILD_DIR:-${HOME}/local_builds}"
-build_list=(rust ripgrep tmux nvim alacritty)
+build_list=(rust ripgrep tmux nvim fzf alacritty)
 export_path=false
 job_count=4
 
