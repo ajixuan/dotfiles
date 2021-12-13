@@ -6,7 +6,7 @@ set -e
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
 build_base_dir="${BUILD_DIR:-${HOME}/local_builds}"
-build_list=(rust ripgrep tmux nvim)
+build_list=(rust ripgrep tmux nvim alacritty)
 export_path=false
 job_count=4
 
@@ -20,7 +20,7 @@ everything to a temporary directory (default ${HOME}/tmp/usr/local). When
 passing in the -i flag all packages will be installed to the system directory
 (/usr/local/)
 
-build.sh [-h] [-p rust,rigrep,tmux,nvim,fzf]
+build.sh [-h] [-p rust,rigrep,tmux,nvim,fzf,alacritty]
   -h                     print help message
   -i                     update PATH to build_dir/bin
   -p PACKAGE             comma separated list of package to install
