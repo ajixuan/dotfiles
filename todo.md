@@ -14,3 +14,7 @@
   [x]  build neovim duplicates build_dir
 12122021
   [] missing deps: fontconfig(alacritty),lua(neovim)
+  [] missing deps: libssl-dev, g++/c++ compiler
+  [] missing deps: fontconfig/libconfig-dev (alacritty)
+  [] missing deps: libxcb-xfixes0-dev libxcb-shape0-dev libx11-xcb-dev libxcb-render-util0 (alacritty)
+

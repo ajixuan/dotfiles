@@ -345,7 +345,8 @@ build_nvim(){
 build_alacritty(){
   if ! [ -f "${build_dir}/bin/alacritty" ] ; then
     echo "Building alacritty"
-    git_cl "${alacritty_url}" "${download_dir}/alacritty"
+
+    curls "${alacritty_url}" "alacritty.tar.gz"
     ( cd "${download_dir}/alacritty" &&
       cargo build --release &&
       [ ! -f ./target/release/alacritty ] && echo "Error: alacritty failed to build" && exit 1 ||
