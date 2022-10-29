@@ -129,12 +129,9 @@ function cmake_build {
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
 }
 
-function std_build {
+function untar {
   local _pkg_name="${1}"
   local _build_dir="${2:-${build_dir}}"
-  local _extra_config_flags=(${CONFIG_FLAGS:-})
-  local _extra_make_flags=(${MAKE_FLAGS:-})
-  local _extra_make_install_flags=(${MAKE_INSTALL_FLAGS:-})
 
   if [ ! -d "${download_dir}/${_pkg_name}"* ] ; then
     tar xvf "${download_dir}/tars/${_pkg_name}.tar.gz" -C "${download_dir}"
@@ -144,6 +141,16 @@ function std_build {
     _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d "/" -f1)"
     mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
   fi
+}
+
+function std_build {
+  local _pkg_name="${1}"
+  local _build_dir="${2:-${build_dir}}"
+  local _extra_config_flags=(${CONFIG_FLAGS:-})
+  local _extra_make_flags=(${MAKE_FLAGS:-})
+  local _extra_make_install_flags=(${MAKE_INSTALL_FLAGS:-})
+
+  untar "${_pkg_name}" "${_build_dir}"
 
   ( cd "${download_dir}/${_pkg_name}" && \
     [ -f "./configure" ] && \
@@ -347,6 +354,8 @@ build_alacritty(){
     echo "Building alacritty"
 
     curls "${alacritty_url}" "alacritty.tar.gz"
+    untar "alacritty"
+    export PKG_CONFIG_PATH=${deps_build_dir}/lib/cargo
     ( cd "${download_dir}/alacritty" &&
       cargo build --release &&
       [ ! -f ./target/release/alacritty ] && echo "Error: alacritty failed to build" && exit 1 ||
