@@ -107,6 +107,21 @@ mkdir -p "${download_dir}"
 
 ###############
 # Helpers
+#
+function untar {
+  local _pkg_name="${1}"
+  local _build_dir="${2:-${build_dir}}"
+
+  if [ ! -d "${download_dir}/${_pkg_name}" ] ; then
+    tar xvf "${download_dir}/tars/${_pkg_name}.tar.gz" -C "${download_dir}"
+
+    # Rename the directory in the tar, doing it this way because tar
+    # --strip-components 1 is only supported on GNU and BSD tars
+    _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d "/" -f1)"
+    mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
+  fi
+}
+
 function cmake_build {
   local _pkg_name="${1}"
   local _build_dir="${2:-${build_dir}}"
@@ -114,33 +129,12 @@ function cmake_build {
   local _extra_make_flags=(${MAKE_FLAGS:-})
   local _extra_make_install_flags=(${MAKE_INSTALL_FLAGS:-})
 
-  if [ ! -d "${download_dir}/${_pkg_name}"* ] ; then
-    tar xvf "${download_dir}/tars/${_pkg_name}.tar.gz" -C "${download_dir}"
-
-    # Rename the directory in the tar, doing it this way because tar
-    # --strip-components 1 is only supported on GNU and BSD tars
-    _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d "/" -f1)"
-    mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
-  fi
+  untar "${_pkg_name}" "${_build_dir}"
 
   ( cd "${download_dir}/${_pkg_name}" &&
     cmake  "${_extra_config_flags[@]}" -DCMAKE_INSTALL_PREFIX=${_build_dir} ./ && \
     make -j${job_count} "${_extra_make_install_flags[@]}" install )
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
-}
-
-function untar {
-  local _pkg_name="${1}"
-  local _build_dir="${2:-${build_dir}}"
-
-  if [ ! -d "${download_dir}/${_pkg_name}"* ] ; then
-    tar xvf "${download_dir}/tars/${_pkg_name}.tar.gz" -C "${download_dir}"
-
-    # Rename the directory in the tar, doing it this way because tar
-    # --strip-components 1 is only supported on GNU and BSD tars
-    _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d "/" -f1)"
-    mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
-  fi
 }
 
 function std_build {
@@ -155,10 +149,13 @@ function std_build {
   ( cd "${download_dir}/${_pkg_name}" && \
     [ -f "./configure" ] && \
     ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" || \
+    [ -f "./autogen.sh" ] && \
+    ./autogen.sh "--prefix=${_build_dir}" "${_extra_config_flags[@]}" || \
     make -j${job_count} "${_extra_make_flags[@]}" && \
     make -j${job_count} "${_extra_make_install_flags[@]}" install )
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
 }
+
 
 # Curl and verify
 function curls {
@@ -260,6 +257,23 @@ build_tools(){
     std_build 'freetype' "${deps_build_dir}"
   fi
 
+  if ! [ -f "${build_dir}/lib/expat" ]; then
+    echo "Building expat"
+    curls "${expat_url}" "expat.tar.gz"
+    cmake_build 'expat' "${deps_build_dir}"
+  fi
+
+  if ! [ -f "${build_dir}/lib/gperf" ]; then
+    echo "Building gperf"
+    curls "${gperf_url}" "gperf.tar.gz"
+    std_build 'gperf' "${deps_build_dir}"
+  fi
+
+  if ! [ -f "${build_dir}/lib/fontconfig" ]; then
+    echo "Building fontconfig"
+    curls "${fontconfig_url}" "fontconfig.tar.gz"
+    std_build 'fontconfig' "${deps_build_dir}"
+  fi
 }
 
 install_rust() {
@@ -355,7 +369,6 @@ build_alacritty(){
 
     curls "${alacritty_url}" "alacritty.tar.gz"
     untar "alacritty"
-    export PKG_CONFIG_PATH=${deps_build_dir}/lib/cargo
     ( cd "${download_dir}/alacritty" &&
       cargo build --release &&
       [ ! -f ./target/release/alacritty ] && echo "Error: alacritty failed to build" && exit 1 ||
