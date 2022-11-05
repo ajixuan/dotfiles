@@ -17,6 +17,12 @@ To make VirtualBox interface usable, the VBoxGuestAdditions is indispensable.
 3. Mount optical drive by command `sudo mount /dev/cdrom /mnt/`
 4. `cd /mnt && sudo sh ./VBoxLinuxAdditions.run`
 
+##Missing deps
+Currently there are some package dependencies that aren't being compiled. These will get added in the future
+```
+$ sudo apt install libfontconfig1-dev m4 openssl-dev libxcb-composite0-dev
+``` 
+
 ##Compile tools:
 
 ```
