@@ -19,8 +19,8 @@ PATH=$PATH:$HOME/bin
 PATH=$PATH:$GOPATH/bin
 export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
-export WORKON_HOME="${HOME}/python-virtual-envs/"
-export VIRTUALENV_WRAPPER_PATH="${HOME}/.local/bin/virtualenvwrapper"
+export WORKON_HOME="${HOME}/.virtualenvs"
+export VIRTUALENV_WRAPPER_PATH="/usr/bin/virtualenvwrapper_lazy.sh"
 # Pull ghar files automatically
 if which ghar > /dev/null ; then
   dotfiles_dir="$(dirname $(readlink ${BASH_SOURCE[0]}))"
@@ -91,3 +91,5 @@ done
 
 #fzf
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+PATH=${PATH}:/home/aji/local_builds/usr/local/bin
+. "/home/aji/local_builds/usr/local/cargo/env"
