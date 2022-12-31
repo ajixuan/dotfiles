@@ -6,14 +6,14 @@ set -e
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 static="${STATIC:-true}"
 build_base_dir="${BUILD_DIR:-${HOME}/local_builds}"
-build_list=(rust ripgrep tmux nvim fzf alacritty)
+build_list=()
 export_path=false
 job_count=4
 
 usage() {
   cat <<EOF
 Currently installable packages:
-rust, ripgrep, tmux, nvim, fzf
+rust, ripgrep, tmux, nvim, fzf, alacritty
 
 By default the script will not install deps to system, but will instead install
 everything to a temporary directory (default ${HOME}/tmp/usr/local). When
@@ -375,6 +375,11 @@ build_alacritty(){
       mv './target/release/alacritty' "${build_dir}/bin/" )
   fi
 }
+if [ ${#build_list[*]} -eq 0 ]; then
+  echo "No tools specified, please use -p and choose a tool to build"
+  usage
+  exit 0
+fi
 
 [[ "${build_list[@]}" =~ fzf ]]  && install_fzf
 [[ "${build_list[@]}" =~ rust ]] && install_rust
@@ -390,5 +395,3 @@ if ${export_path} ; then
   path_string='PATH=${PATH}:'"${build_dir}/bin"
   grep -qxF "${path_string}" "${HOME}/.bashrc" || echo ${path_string} >> "${HOME}/.bashrc"
 fi
-
-
