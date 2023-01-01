@@ -9,13 +9,17 @@ function start-ssh-agent {
   if [ -S "${sock}" ] && [ -f "${pid}" ] ; then
     export SSH_AUTH_SOCK="${sock}"
     export SSH_AGENT_PID="${pid}"
-  else
-    echo "Starting ssh-agent"
-    eval "$(ssh-agent -a ${sock})"
-    echo "${SSH_AGENT_PID}" > "${pid}"
-    ssh-add ~/.ssh/*_rsa
-    trap "pkill ssh-agent && rm ${sock} ${pid}" EXIT
+
+    if ssh-add ; then
+      exit 0
+    fi
   fi
+
+  rm "${sock}" "${pid}"
+  echo "Starting ssh-agent"
+  eval "$(ssh-agent -a ${sock})"
+  echo "${SSH_AGENT_PID}" > "${pid}"
+  ssh-add ~/.ssh/*_rsa
 }
 
 function start_vpn {
