@@ -15,11 +15,9 @@ set -e
 # vars
 script_dir="$(dirname ${BASH_SOURCE[0]})"
 work_dir="${WORK_DIR:-${HOME}}"
-build_tools=('-p' ${@})
-
 
 # URLs
-plug_url='https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+plug_url='https://github.com/junegunn/vim-plug.git'
 ghar_url='https://github.com/philips/ghar.git'
 
 echo "im a snowman ☃"
@@ -29,13 +27,11 @@ mkdir -p "${work_dir}/.vim/plugged"
 mkdir -p "${work_dir}/.vim/syntax"
 mkdir -p "${work_dir}/bin"
 
-echo "Building tools"
-. "${script_dir}/build.sh" -i "${build_tools[*]}"
-
 # Get Plug
-if [ ! -f "${work_dir}/autoload/plug.vim" ]; then
+if [ ! -f "${work_dir}/.vim/autoload/plug.vim" ]; then
   echo "Download plug"
-  curl -fsSL "${plug_url}" --create-dirs -o "${work_dir}/.vim/autoload/plug.vim"
+  git_cl "${plug_url}" "/tmp/vim-plug"
+  cp "/tmp/vim-plug/plug.vim" "${work_dir}/.vim/autoload/plug.vim"
 fi
 
 # Install ghar
@@ -49,3 +45,6 @@ fi
 echo "Installing dotfiles"
 ghar add "$(git remote get-url origin)" ajidotfiles
 ghar install ajidotfiles
+
+echo "Building tools"
+. "${script_dir}/build.sh" "${@}"
