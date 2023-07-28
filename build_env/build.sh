@@ -68,6 +68,13 @@ while getopts ":hip:b:d:r:c:t:" opt; do
   esac
 done
 
+
+# Set some traps
+catch() {
+  echo "error $1 occurred on $2"
+}
+trap 'catch $? $LINENO' ERR
+
 # Environment Varibales
 download_dir="${DOWNLOAD_DIR:-${build_base_dir}/tmp/artifacts}"
 build_dir="${build_base_dir}/usr/local"
@@ -196,30 +203,35 @@ build_tools(){
 
   # build autoconf
   if ! [ -f "${deps_build_dir}/bin/autoconf" ] ; then
+    echo "building autoconf"
     curls "${autoconf_url}" "autoconf.tar.gz"
     std_build 'autoconf' "${deps_build_dir}"
   fi
 
   # build automake
   if ! [ -f "${deps_build_dir}/bin/aclocal" ] ; then
+    echo "building automake"
     curls "${automake_url}" "automake.tar.gz"
     std_build 'automake' "${deps_build_dir}"
   fi
 
   # build pkg-config
   if ! [ -f "${deps_build_dir}/bin/pkg-config" ] ; then
+    echo "building pkg-config"
     curls "${pkgconfig_url}" "pkg-config.tar.gz"
     CONFIG_FLAGS='--with-internal-glib' std_build 'pkg-config' "${deps_build_dir}"
   fi
 
   # build cmake
   if ! [ -f "${deps_build_dir}/bin/cmake" ] ; then
+    echo "building cmake"
     curls "${cmake_url}" "cmake.tar.gz"
     std_build 'cmake' "${deps_build_dir}"
   fi
 
   # build libtool
   if ! [ -f "${deps_build_dir}/bin/libtool" ] ; then
+    echo "building libtool"
     curls "${libtool_url}" "libtool.tar.gz"
     std_build 'libtool' "${deps_build_dir}"
   fi
@@ -233,12 +245,14 @@ build_tools(){
 
   # build gettext
   if ! [ -f "${build_dir}/bin/gettextize" ] ; then
+    echo "building gettext"
     curls "${gettext_url}" "gettext.tar.gz"
     std_build 'gettext' "${deps_build_dir}"
   fi
 
   # build bison
   if ! [ -f "${deps_build_dir}/bin/yacc" ] ; then
+    echo "building bison"
     curls "${bison_url}" "bison.tar.gz"
     std_build 'bison' "${deps_build_dir}"
   fi
@@ -257,7 +271,7 @@ build_tools(){
     std_build 'freetype' "${deps_build_dir}"
   fi
 
-  if ! [ -f "${build_dir}/lib/expat" ]; then
+  if ! ls ${build_dir}/lib/libexpat.so* ; then
     echo "Building expat"
     curls "${expat_url}" "expat.tar.gz"
     cmake_build 'expat' "${deps_build_dir}"
