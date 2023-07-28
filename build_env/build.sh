@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script for quickly compiling tools
-set -e
+set -Eeo pipefail
 
 # Default variables
 script_dir="$(dirname ${BASH_SOURCE[0]})"
@@ -71,9 +71,9 @@ done
 
 # Set some traps
 catch() {
-  echo "error $1 occurred on $2"
+  echo "error $1 occurred on $2 in $3"
 }
-trap 'catch $? $LINENO' ERR
+trap 'catch $? $LINENO ${FUNCNAME[0]' ERR
 
 # Environment Varibales
 download_dir="${DOWNLOAD_DIR:-${build_base_dir}/tmp/artifacts}"
