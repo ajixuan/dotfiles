@@ -277,7 +277,7 @@ build_tools(){
 }
 
 install_rust() {
-  if ! [ -f "${build_dir}/cargo/bin/cargo" ] ; then
+  if ! "${build_dir}/cargo/bin/rustc" -V ; then
     echo "Installing rust"
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
     source "${CARGO_HOME}/env"
@@ -364,6 +364,9 @@ build_nvim(){
 }
 
 build_alacritty(){
+  # dependencies
+  install_rust
+
   if ! [ -f "${build_dir}/bin/alacritty" ] ; then
     echo "Building alacritty"
 
@@ -393,5 +396,9 @@ fi
 
 if ${export_path} ; then
   path_string='PATH=${PATH}:'"${build_dir}/bin"
+  rustup_home_path="RUSTUP_HOME=${build_dir}/usr/local/cargo"
+  cargo_home_path="CARGO_HOME=${build_dir}/usr/local/cargo"
   grep -qxF "${path_string}" "${HOME}/.bashrc" || echo ${path_string} >> "${HOME}/.bashrc"
+  grep -qxF "${cargo_home_path}" "${HOME}/.bashrc" || echo ${cargo_home_path} >> "${HOME}/.bashrc"
+  grep -qxF "${rustup_home_path}" "${HOME}/.bashrc" || echo ${rustup_home_path} >> "${HOME}/.bashrc"
 fi
