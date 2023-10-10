@@ -11,7 +11,7 @@ function start-ssh-agent {
     export SSH_AGENT_PID="${pid}"
 
     if ssh-add ; then
-      exit 0
+      return 0
     fi
   fi
 
