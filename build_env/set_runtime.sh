@@ -27,17 +27,25 @@ mkdir -p "${work_dir}/.vim/plugged"
 mkdir -p "${work_dir}/.vim/syntax"
 mkdir -p "${work_dir}/bin"
 
+function git_cl {
+  local _url="${1}"
+  local _output="${2}"
+  [ -d "${_output}" ] && \
+  ( cd "${_output}" ; git pull ) || git clone "${_url}" "${_output}"
+}
+
+
 # Get Plug
 if [ ! -f "${work_dir}/.vim/autoload/plug.vim" ]; then
   echo "Download plug"
-  git_cl "${plug_url}" "/tmp/vim-plug"
+  git clone "${plug_url}" "/tmp/vim-plug"
   cp "/tmp/vim-plug/plug.vim" "${work_dir}/.vim/autoload/plug.vim"
 fi
 
 # Install ghar
 if [ ! -f "${work_dir}/bin/ghar" ]; then
   echo "Download ghar"
-  git_cl "${ghar_url}" "${work_dir}/ghar"
+  git clone "${ghar_url}" "${work_dir}/ghar"
   ln -s "${work_dir}/ghar/bin/ghar" "${work_dir}/bin/ghar"
 fi
 
