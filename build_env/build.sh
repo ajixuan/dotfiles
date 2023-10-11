@@ -10,6 +10,10 @@ build_list=()
 export_path=false
 job_count=4
 
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+
 usage() {
   cat <<EOF
 Currently installable packages:
@@ -68,10 +72,16 @@ while getopts ":hip:b:d:r:c:t:" opt; do
   esac
 done
 
+# Prereq packages
+if ! which make &> /dev/null; then
+  printf "${RED} error: make not found\n"
+  exit 1
+fi
+
 
 # Set some traps
 catch() {
-  echo "error $1 occurred on $2 in $3"
+  printf "${RED} error $1 occurred on $2 in $3\n"
 }
 trap 'catch $? $LINENO ${FUNCNAME[0]}' ERR
 
