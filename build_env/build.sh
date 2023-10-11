@@ -151,10 +151,12 @@ function cmake_build {
 
   untar "${_pkg_name}" "${_build_dir}"
 
-  ( cd "${download_dir}/${_pkg_name}" &&
-    cmake  "${_extra_config_flags[@]}" -DCMAKE_INSTALL_PREFIX=${_build_dir} ./ && \
-    make -j${job_count} "${_extra_make_install_flags[@]}" install )
+  pushd .
+  cd "${download_dir}/${_pkg_name}"
+  cmake  "${_extra_config_flags[@]}" -DCMAKE_INSTALL_PREFIX=${_build_dir} ./
+  make -j${job_count} "${_extra_make_install_flags[@]}" install
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
+  popd
 }
 
 function std_build {
@@ -163,16 +165,19 @@ function std_build {
   local _extra_config_flags=(${CONFIG_FLAGS:-})
   local _extra_make_flags=(${MAKE_FLAGS:-})
   local _extra_make_install_flags=(${MAKE_INSTALL_FLAGS:-})
+  local _install_command=${INSTALL_COMMAND:-install}
 
   untar "${_pkg_name}" "${_build_dir}"
 
-  ( cd "${download_dir}/${_pkg_name}" && \
-    [ -f "./configure" ] && \
-    ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}" || \
-    [ -f "./autogen.sh" ] && \
-    ./autogen.sh "--prefix=${_build_dir}" "${_extra_config_flags[@]}" || \
-    make -j${job_count} "${_extra_make_flags[@]}" && \
-    make -j${job_count} "${_extra_make_install_flags[@]}" install )
+  pushd .
+  cd "${download_dir}/${_pkg_name}"
+  [ -f "./configure" ] && \
+    ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}"
+  [ -f "./autogen.sh" ] && \
+    ./autogen.sh "--prefix=${_build_dir}" "${_extra_config_flags[@]}"
+  make -j${job_count} "${_extra_make_flags[@]}"
+  make -j${job_count} "${_extra_make_install_flags[@]}" install
+  popd
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
 }
 
