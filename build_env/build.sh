@@ -354,7 +354,7 @@ build_tmux() {
     if ! [ -f ${deps_build_dir}/lib/libevent.a ]; then
       printf "${GREEN}Building libevent${NC}\n"
       curls "${libevent_url}" "libevent.tar.gz"
-      CONFIG_FLAGS="--enable-shared" std_build 'libevent' "${deps_build_dir}"
+      CONFIG_FLAGS="--enable-shared" cmake_build 'libevent' "${deps_build_dir}"
     fi
 
     # build ncurses
