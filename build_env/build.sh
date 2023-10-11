@@ -73,7 +73,7 @@ done
 catch() {
   echo "error $1 occurred on $2 in $3"
 }
-trap 'catch $? $LINENO ${FUNCNAME[0]' ERR
+trap 'catch $? $LINENO ${FUNCNAME[0]}' ERR
 
 # Environment Varibales
 download_dir="${DOWNLOAD_DIR:-${build_base_dir}/tmp/artifacts}"
@@ -120,12 +120,14 @@ function untar {
   local _build_dir="${2:-${build_dir}}"
 
   if [ ! -d "${download_dir}/${_pkg_name}" ] ; then
+    set +o pipefail
     tar xvf "${download_dir}/tars/${_pkg_name}.tar.gz" -C "${download_dir}"
 
     # Rename the directory in the tar, doing it this way because tar
     # --strip-components 1 is only supported on GNU and BSD tars
-    _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d "/" -f1)"
+    _extract_dir="$(tar tvf "${download_dir}/tars/${_pkg_name}.tar.gz" | head -n1 | awk '{print $NF}' | cut -d '/' -f1)"
     mv "${download_dir}/${_extract_dir}" "${download_dir}/${_pkg_name}" # rename the untarred directory name
+    set -o pipefail
   fi
 }
 
