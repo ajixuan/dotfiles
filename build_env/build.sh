@@ -175,10 +175,12 @@ function std_build {
     ./configure "--prefix=${_build_dir}" "${_extra_config_flags[@]}"
   [ -f "./autogen.sh" ] && \
     ./autogen.sh "--prefix=${_build_dir}" "${_extra_config_flags[@]}"
+  pwd
+  ls Makefile
   make -j${job_count} "${_extra_make_flags[@]}"
   make -j${job_count} "${_extra_make_install_flags[@]}" install
-  popd
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
+  popd
 }
 
 
@@ -350,12 +352,14 @@ build_tmux() {
 
     # build libevent
     if ! [ -f ${deps_build_dir}/lib/libevent.a ]; then
+      printf "${GREEN}Building libevent${NC}\n"
       curls "${libevent_url}" "libevent.tar.gz"
       CONFIG_FLAGS="--enable-shared" std_build 'libevent' "${deps_build_dir}"
     fi
 
     # build ncurses
     if ! [ -f "${deps_build_dir}/lib/libncurses.a" ]; then
+      printf "${GREEN}Building ncurses${NC}\n"
       curls "${ncurses_url}" "ncurses.tar.gz" "${ncureses_asc}" \
       'https://invisible-island.net/public/dickey-invisible-island.txt'
       CONFIG_FLAGS="--with-shared     \
