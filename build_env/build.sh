@@ -13,6 +13,7 @@ job_count=4
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+NC='\033[m'
 
 usage() {
   cat <<EOF
@@ -215,35 +216,35 @@ build_tools(){
 
   # build autoconf
   if ! [ -f "${deps_build_dir}/bin/autoconf" ] ; then
-    echo "building autoconf"
+    printf "${GREEN}building autoconf${NC}\n"
     curls "${autoconf_url}" "autoconf.tar.gz"
     std_build 'autoconf' "${deps_build_dir}"
   fi
 
   # build automake
   if ! [ -f "${deps_build_dir}/bin/aclocal" ] ; then
-    echo "building automake"
+    printf "${GREEN}building automake${NC}\n"
     curls "${automake_url}" "automake.tar.gz"
     std_build 'automake' "${deps_build_dir}"
   fi
 
   # build pkg-config
   if ! [ -f "${deps_build_dir}/bin/pkg-config" ] ; then
-    echo "building pkg-config"
+    printf "${GREEN}building pkg-config${NC}\n"
     curls "${pkgconfig_url}" "pkg-config.tar.gz"
     CONFIG_FLAGS='--with-internal-glib' std_build 'pkg-config' "${deps_build_dir}"
   fi
 
   # build cmake
   if ! [ -f "${deps_build_dir}/bin/cmake" ] ; then
-    echo "building cmake"
+    printf "${GREEN}building cmake${NC}\n"
     curls "${cmake_url}" "cmake.tar.gz"
     std_build 'cmake' "${deps_build_dir}"
   fi
 
   # build libtool
   if ! [ -f "${deps_build_dir}/bin/libtool" ] ; then
-    echo "building libtool"
+    printf "${GREEN}building libtool${NC}\n"
     curls "${libtool_url}" "libtool.tar.gz"
     std_build 'libtool' "${deps_build_dir}"
   fi
@@ -257,46 +258,46 @@ build_tools(){
 
   # build gettext
   if ! [ -f "${build_dir}/bin/gettextize" ] ; then
-    echo "building gettext"
+    printf "${GREEN}building gettext${NC}\n"
     curls "${gettext_url}" "gettext.tar.gz"
     std_build 'gettext' "${deps_build_dir}"
   fi
 
   # build bison
   if ! [ -f "${deps_build_dir}/bin/yacc" ] ; then
-    echo "building bison"
+    printf "${GREEN}building bison${NC}\n"
     curls "${bison_url}" "bison.tar.gz"
     std_build 'bison' "${deps_build_dir}"
   fi
 
   # build unzip
   if ! [ -f "${build_dir}/bin/unzip" ] ; then
-    echo "Building unzip"
+    printf "${GREEN}Building unzip${NC}\n"
     git_cl "${unzip_url}" "${download_dir}/unzip"
     cmake_build 'unzip' "${deps_build_dir}"
   fi
 
   # build freetype
   if ! [ -f "${build_dir}/lib/libfreetype.so" ]; then
-    echo "Building freetype2"
+    printf "${GREEN}Building freetype2${NC}\n"
     curls "${freetype_url}" "freetype.tar.gz"
     std_build 'freetype' "${deps_build_dir}"
   fi
 
   if ! ls ${build_dir}/lib/libexpat.so* ; then
-    echo "Building expat"
+    printf "${GREEN}Building expat${NC}\n"
     curls "${expat_url}" "expat.tar.gz"
     cmake_build 'expat' "${deps_build_dir}"
   fi
 
   if ! [ -f "${build_dir}/lib/gperf" ]; then
-    echo "Building gperf"
+    printf "${GREEN}Building gperf${NC}\n"
     curls "${gperf_url}" "gperf.tar.gz"
     std_build 'gperf' "${deps_build_dir}"
   fi
 
   if ! [ -f "${build_dir}/lib/fontconfig" ]; then
-    echo "Building fontconfig"
+    printf "${GREEN}Building fontconfig${NC}\n"
     curls "${fontconfig_url}" "fontconfig.tar.gz"
     std_build 'fontconfig' "${deps_build_dir}"
   fi
@@ -304,7 +305,7 @@ build_tools(){
 
 install_rust() {
   if ! "${build_dir}/cargo/bin/rustc" -V ; then
-    echo "Installing rust"
+    printf "${GREEN}Installing rust${NC}\n"
     curl --proto '=https' --tlsv1.2 -sSf "${rust_url}" | bash -s -- -y
     source "${CARGO_HOME}/env"
     rustup toolchain install nightly --allow-downgrade --profile minimal --component cargo
@@ -322,7 +323,7 @@ build_ripgrep() {
   if ! [ -f "${build_dir}/bin/rg" ] ; then
     install_rust
 
-    echo "Building ripgrep"
+    printf "${GREEN}Building ripgrep${NC}\n"
     ! [ -d "${download_dir}/ripgrep" ] && git clone "${ripgrep_url}" "${download_dir}/ripgrep"
     ( cd "${download_dir}/ripgrep" && \
       cargo build --release && \
@@ -333,7 +334,7 @@ build_ripgrep() {
 
 install_fzf() {
   if ! [ -f "${build_dir}/bin/fzf" ] ; then
-    echo "Installing fzf to ${HOME}/.fzf"
+    printf "${GREEN}Installing fzf to ${HOME}/.fzf${NC}\n"
     git_cl "${fzf_url}" "${HOME}/.fzf"
     ( cd ${HOME}/.fzf && ./install --all )
   fi
@@ -360,7 +361,7 @@ build_tmux() {
     fi
 
     # build tmux
-    echo "Building tmux"
+    printf "${GREEN}Building tmux${NC}\n"
     #curls "${tmux_url}" "tmux.tar.gz"
     # Note on building tmux:
     # - Since deps_build_dir could be set in a non standard directory, this var
@@ -382,7 +383,7 @@ build_tmux() {
 
 build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
-    echo "Building nvim"
+    printf "${GREEN}Building nvim${NC}\n"
     git_cl "${nvim_url}" "${download_dir}/neovim"
     MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=\"${build_base_dir}/usr/local\"" \
     std_build 'neovim'
@@ -394,18 +395,18 @@ build_alacritty(){
   install_rust
 
   if ! [ -f "${build_dir}/bin/alacritty" ] ; then
-    echo "Building alacritty"
+    printf "${GREEN}Building alacritty${NC}\n"
 
     curls "${alacritty_url}" "alacritty.tar.gz"
     untar "alacritty"
     ( cd "${download_dir}/alacritty" &&
       cargo build --release &&
-      [ ! -f ./target/release/alacritty ] && echo "Error: alacritty failed to build" && exit 1 ||
+      [ ! -f ./target/release/alacritty ] && printf "${RED}Error: alacritty failed to build" && exit 1 ||
       mv './target/release/alacritty' "${build_dir}/bin/" )
   fi
 }
 if [ ${#build_list[*]} -eq 0 ]; then
-  echo "No tools specified, please use -p and choose a tool to build"
+  printf "${RED}No tools specified, please use -p and choose a tool to build\n"
   usage
   exit 0
 fi
