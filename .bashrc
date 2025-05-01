@@ -13,7 +13,6 @@ HISTFILESIZE=2000
 
 # Environment variables
 GOPATH=$HOME/go
-PATH=$PATH:$HOME/Projects/ghar/bin
 PATH=$PATH:$HOME/.local/bin
 PATH=$PATH:$HOME/bin
 PATH=$PATH:$GOPATH/bin
@@ -21,20 +20,6 @@ export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
 export WORKON_HOME="${HOME}/.virtualenvs"
 export VIRTUALENV_WRAPPER_PATH="/usr/bin/virtualenvwrapper_lazy.sh"
-# Pull ghar files automatically
-if which ghar > /dev/null ; then
-  dotfiles_dir="$(dirname $(readlink ${BASH_SOURCE[0]}))"
-  days_since=$(( $(date +%s) - $(git --git-dir "${dotfiles_dir}/.git" log -1 --date=unix --format=%cd) / 3600 / 24))
-  if [ $(( ${days_since} % 31 )) -eq 0  ]; then
-    echo "Monthly dotfile pull"
-    ghar pull > /dev/null
-  fi
-
-  if [[ "$(ghar status)" =~ dirty ]]; then
-    echo "New dotfile changes found, installing dotfiles"
-    ghar install > /dev/null
-  fi
-fi
 
 FULL_NAME="Allen Ji"
 EMAIL="ajixuan11@gmail.com"
