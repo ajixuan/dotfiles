@@ -15,6 +15,3 @@ EOF
 stow ./nix
 stow ./vim
 stow .tmux.conf
-stow ./config
-
-
