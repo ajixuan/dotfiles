@@ -8,10 +8,6 @@
 " Sets how many lines of history VIM has to remember
 set history=500
 
-" Enable filetype plugins
-filetype plugin on
-filetype indent on
-
 " Set to auto read when a file is changed from the outside
 set autoread
 
@@ -107,8 +103,6 @@ set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ 
 " syntax on will overwite custom configs and use default
 syntax enable
 
-" Setting colorscheme in plugin_config.vim
-"colorscheme desert
 set background=dark
 
 " Set utf8 as standard encoding and en_US as the standard language
