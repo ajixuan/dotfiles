@@ -1,7 +1,4 @@
 set runtimepath+=~/.vim,~/.vim/after
-set packpath+=~/.vim
+let &packpath = &runtimepath
 source ~/.vimrc
-
-
-
-
+lua require('init')
