@@ -1,10 +1,15 @@
 .gitref
-.vim/autoload
-.vim/bundle
-.aws/credentials
-.vim/plugged
+
+# nvim
+nix/.config/nvim/.netrwhist
+vim/.vim/autoload
+vim/.vim/bundle
+vim/.vim/plugged
+vim/.vim/.netrwhist
+
+# build_nev
 build_env/autoload
-.config/nvim/.netrwhist
-.vim/.netrwhist
-.aws/cli
-.aws/.*
+
+# misc
+nix/.config/dconf
+nix/.config/obsidian
