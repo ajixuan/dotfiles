@@ -1,4 +1,5 @@
 alias vi="nvim"
+alias vim="nvim"
 alias grep="grep -Ei"
 alias ll="ls -ltrah --color=auto"
 alias ls="ls --color=auto"
