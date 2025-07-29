@@ -33,6 +33,8 @@ function start_vpn {
     [ $? -eq 0 ] && reset
 }
 
+# Find Exclude
+#   - find the first item while excluding everything that comes next
 function find_exc {
     local name=${1}
     shift

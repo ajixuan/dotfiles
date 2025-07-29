@@ -21,9 +21,10 @@ export FZF_DEFAULT_OPTS='--height 30%'
 export WORKON_HOME="${HOME}/.virtualenvs"
 export VIRTUALENV_WRAPPER_PATH="/usr/bin/virtualenvwrapper_lazy.sh"
 
+# Default github user and email
 FULL_NAME="Allen Ji"
 EMAIL="ajixuan11@gmail.com"
-GIT_BASE="${HOME}/Projects"
+[ -f "${HOME}/.bash_local" ] && . "${HOME}/.bash_local"
 
 # Git config
 if which git > /dev/null ; then

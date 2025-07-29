@@ -2,3 +2,4 @@
 stow nix
 stow bash
 stow vim
+stow git
