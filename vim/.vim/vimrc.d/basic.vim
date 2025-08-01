@@ -268,7 +268,7 @@ endfunction
 " => Editing
 """"""""""""""""""""""""""""
 
-set clipboard=unnamed
+set clipboard+=unnamedplus
 
 " easier moving of code blocks
 " better indentation
