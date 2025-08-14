@@ -297,13 +297,13 @@ build_tools(){
     cmake_build 'expat' "${deps_build_dir}"
   fi
 
-  if ! [ -f "${build_dir}/lib/gperf" ]; then
+  if ! [ -f "${build_dir}/bin/gperf" ]; then
     printf "${GREEN}Building gperf${NC}\n"
     curls "${gperf_url}" "gperf.tar.gz"
     std_build 'gperf' "${deps_build_dir}"
   fi
 
-  if ! [ -f "${build_dir}/lib/fontconfig" ]; then
+  if ! [ -d "${build_dir}/share/fontconfig" ]; then
     printf "${GREEN}Building fontconfig${NC}\n"
     curls "${fontconfig_url}" "fontconfig.tar.gz"
     std_build 'fontconfig' "${deps_build_dir}"
@@ -394,7 +394,7 @@ build_nvim(){
   if ! [ -f "${build_dir}/bin/nvim" ] ; then
     printf "${GREEN}Building nvim${NC}\n"
     git_cl "${nvim_url}" "${download_dir}/neovim"
-    MAKE_FLAGS="CMAKE_BUILD_TYPE=\"Release\" CMAKE_INSTALL_PREFIX=\"${build_base_dir}/usr/local\"" \
+    MAKE_FLAGS="USE_BUNDLED_LUV=OFF CMAKE_BUILD_TYPE=Release CMAKE_EXTRA_FLAGS=\"-DCMAKE_INSTALL_PREFIX=${build_base_dir}/usr/local/\"" \
     std_build 'neovim'
   fi
 }
