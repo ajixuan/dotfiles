@@ -16,6 +16,7 @@ GOPATH=$HOME/go
 PATH=$PATH:$HOME/.local/bin
 PATH=$PATH:$HOME/bin
 PATH=$PATH:$GOPATH/bin
+PATH=$PATH:"${KREW_ROOT:-$HOME/.krew}/bin"
 export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
 export WORKON_HOME="${HOME}/.virtualenvs"
