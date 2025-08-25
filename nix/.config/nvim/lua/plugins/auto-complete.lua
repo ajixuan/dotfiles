@@ -20,18 +20,15 @@ return {
     },
     init = function()
       vim.g.coq_settings = {
-
           -- start coq at startup
           auto_start = true,
-
-          -- keybindings
           keymap = {
-            jump_to_mark = nil
+            jump_to_mark = '',
           }
       }
     end,
     config = function()
-      -- Your LSP settings here
+      -- lspconfigs go here
     end,
   }
 }
