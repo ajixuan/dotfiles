@@ -1,6 +1,8 @@
 " Reminder
 " ctrl-o prev cursor
 " ctrl-i next cursor
+"
+let g:coq_settings = { "keymap.jump_to_mark": v:false }
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
