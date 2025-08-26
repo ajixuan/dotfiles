@@ -2,7 +2,7 @@
 " ctrl-o prev cursor
 " ctrl-i next cursor
 "
-let g:coq_settings = { "keymap.jump_to_mark": v:false }
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
@@ -44,6 +44,7 @@ augroup timeoutlen
   autocmd InsertEnter * set timeoutlen=100
   autocmd InsertLeave * set timeoutlen=1000
 augroup END
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
@@ -367,4 +368,14 @@ fun! ResizeTabs()
   %s/^\s\{4}/  /e
   call setpos('.', save_cursor)
 endfun
+
+
+
+""""""""""""""""""""""
+" => Plugin Mappings
+""""""""""""""""""""""
+" nvim-tree
+nmap <Tab> :NvimTreeToggle<cr>
+
+
 
