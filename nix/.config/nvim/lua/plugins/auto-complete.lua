@@ -18,6 +18,9 @@ return {
       -- - comment banner
       -- - etc
     },
+    opts = {
+
+    },
     init = function()
       vim.g.coq_settings = {
           -- start coq at startup
