@@ -228,12 +228,6 @@ map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
 " Switch CWD to the directory of the open buffer
 map <leader>cd :cd %:p:h<cr>:pwd<cr>
 
-" Quickly open a buffer for scribble
-map <leader>b :vsp ~/buffer<cr>
-
-" Quickly open a markdown buffer for scribble
-map <leader>x :vsp ~/buffer.md<cr>
-
 " Quickly open todo
 map <leader>o :vsp ~/todo.md<cr>
 
@@ -339,9 +333,6 @@ command! -nargs=* T 20split | terminal <args>
 command! -nargs=* VT vsplit | terminal <args>
 tnoremap <A-,> <C-\><C-n>
 
-"augroup terminal
-"  autocmd! TermOpen * startinsert
-"augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
