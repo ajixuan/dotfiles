@@ -29,7 +29,7 @@ command! W w !sudo tee % > /dev/null
 set nomodeline
 
 " Short cut for running ! commands
-map <leader>e :tabnew<cr>:terminal<space>
+" map <leader>e :tabnew<cr>:terminal<space>
 
 " Fast saving
 nmap <leader>w :w!<cr>
@@ -185,8 +185,8 @@ vnoremap L $
 map 0 ^
 
 " Move back and forth`
-nmap <leader>p :bprev<cr>
-nmap <leader>n :bnext<cr>
+nmap <leader>h :bprev<cr>
+nmap <leader>l :bnext<cr>
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -206,10 +206,10 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " Quick resize windows
-nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/5)<CR>
-nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 5/3)<CR>
-nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 2/5)<CR>
-nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 5/3)<CR>
+"nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/5)<CR>
+"nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 5/3)<CR>
+"nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 2/5)<CR>
+"nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 5/3)<CR>
 
 " VSP and SP
 map <leader>\| :vsp<CR><c-p><CR>
