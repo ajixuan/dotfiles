@@ -18,9 +18,6 @@ return {
       -- - comment banner
       -- - etc
     },
-    opts = {
-
-    },
     init = function()
       vim.g.coq_settings = {
           -- start coq at startup
@@ -30,12 +27,6 @@ return {
             jump_to_mark = '',
           }
       }
-    end,
-    config = function()
-      vim.lsp.enable('gopls')
-      vim.keymap.set("n", "gn", vim.diagnostic.goto_next, {desc = "Go to next diagnostics"})
-      vim.keymap.set("n", "gb", vim.diagnostic.goto_prev, {desc = "Go to prev diagnostics"})
-      vim.keymap.set("n", "ge", vim.diagnostic.open_float, {desc = "Show diagnostics"})
     end,
   }
 }
