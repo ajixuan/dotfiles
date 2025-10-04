@@ -52,15 +52,23 @@ return {
       dapui.setup()
       dap.listeners.before.attach.dapui_config = function() dapui.open() end
       dap.listeners.before.launch.dapui_config = function() dapui.open() end
+
       -- Optional: Auto-close dapui on debug session end
       -- require('dap').listeners.before.event_terminated.dapui_config = function() require('dapui').close() end
       -- require('dap').listeners.before.event_exited.dapui_config = function() require('dapui').close() end
 
       table.insert(dap.configurations.go, {
-        type = 'dlv',
-        name = 'dlv test',
-        mode = 'debug',
+        type = 'go',
+        name = 'Launch go test in directory',
         request = 'launch',
+        mode = "test",
+        program = "./lib",
+        --args = {"-test.v"},
+       -- program = function()
+       --   local default_dir = vim.fn.expand("%:p:h")
+       --   local input = vim.fn.input("Test dir: ", default_dir, "dir")
+       --   return input
+       -- end,
       })
 
       dap.configurations.python = {

@@ -41,7 +41,6 @@ return {
       end
 
       vim.diagnostic.config({
-        virtual_lines = true,
         virtual_text = true,
       })
       vim.lsp.enable('gopls')
@@ -59,5 +58,32 @@ return {
       })
 
     end,
+  },
+  {
+    "ThePrimeagen/refactoring.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-treesitter/nvim-treesitter",
+    },
+    lazy = false,
+    opts = {},
+    init = function(_, opts)
+      local refactoring = require('refactoring')
+      refactoring.setup(opts)
+      vim.keymap.set({ "n", "x" }, "<leader>re", function() return refactoring.refactor('Extract Function') end, { expr = true })
+      vim.keymap.set({ "n", "x" }, "<leader>rf", function() return refactoring.refactor('Extract Function To File') end, { expr = true })
+      vim.keymap.set({ "n", "x" }, "<leader>rv", function() return refactoring.refactor('Extract Variable') end, { expr = true })
+      vim.keymap.set({ "n", "x" }, "<leader>rI", function() return refactoring.refactor('Inline Function') end, { expr = true })
+      vim.keymap.set({ "n", "x" }, "<leader>ri", function() return refactoring.refactor('Inline Variable') end, { expr = true })
+      vim.keymap.set({ "n", "x" }, "<leader>rbb", function() return refactoring.refactor('Extract Block') end, { expr = true })
+      vim.keymap.set({ "n", "x" }, "<leader>rbf", function() return refactoring.refactor('Extract Block To File') end, { expr = true })
+      vim.keymap.set({ "n", "x" }, "<leader>rr", function() return refactoring.select_refactor() end, { expr = true })
+    end,
+  },
+  {
+    "m4xshen/autoclose.nvim",
+    init = function(_, opts)
+      require("autoclose").setup()
+    end
   }
 }
