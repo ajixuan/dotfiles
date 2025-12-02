@@ -34,54 +34,49 @@ return {
     },
 
     config = function()
-      vim.api.nvim_set_hl(0, "DapStoppedLine", { default = true, link = "Visual" })
-
-      -- setup dap config by VsCode launch.json file
-      local vscode = require("dap.ext.vscode")
-      local json = require("plenary.json")
-      vscode.json_decode = function(str)
-        return vim.json.decode(json.json_strip_comments(str))
-      end
-
       -- dap configs
       local dap = require('dap')
       local dapui = require('dapui')
-      require('dap-go').setup()
+
+      dap.adapters.go = {
+        type = "executable",
+        command = "dlv",
+        args = {"dap"},
+      }
+      require('dap-go').setup({
+        dap_configurations = {
+          {
+            type = "go",
+            request = "launch",
+            name = "Debug with args",
+            mode = "test",
+            program = function()
+              local default_dir = vim.fn.expand("%:p:h")
+              return vim.fn.input("Test dir: ", default_dir, "dir")
+            end,
+            args = function()
+              local input = vim.fn.input("Test args: ")
+              return vim.split(input, " ", { trimempty = true })
+            end,
+          },
+          {
+            type = "go",
+            request = "launch",
+            name = "lolpersist",
+            mode = "test",
+            program = function()
+              local default_dir = vim.fn.expand("%:p:h")
+              return vim.fn.input("Test dir: ", default_dir, "dir")
+            end,
+            console = "integratedTerminal",
+          },
+        }
+      })
 
       -- Auto-open dapui on debug session start
       dapui.setup()
       dap.listeners.before.attach.dapui_config = function() dapui.open() end
       dap.listeners.before.launch.dapui_config = function() dapui.open() end
-
-      -- Optional: Auto-close dapui on debug session end
-      -- require('dap').listeners.before.event_terminated.dapui_config = function() require('dapui').close() end
-      -- require('dap').listeners.before.event_exited.dapui_config = function() require('dapui').close() end
-
-      table.insert(dap.configurations.go, {
-        type = 'go',
-        name = 'Launch go test in directory',
-        request = 'launch',
-        mode = "test",
-        program = "./lib",
-        --args = {"-test.v"},
-       -- program = function()
-       --   local default_dir = vim.fn.expand("%:p:h")
-       --   local input = vim.fn.input("Test dir: ", default_dir, "dir")
-       --   return input
-       -- end,
-      })
-
-      dap.configurations.python = {
-        {
-          type = 'python';
-          request = 'launch';
-          name = "Launch file";
-          program = "${file}";
-          pythonPath = function()
-            return '/usr/bin/python'
-          end;
-        },
-      }
-    end,
+    end
   }
 }
