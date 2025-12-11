@@ -8,6 +8,7 @@ return {
       "leoluz/nvim-dap-go",
       "nvim-neotest/nvim-nio",
       "theHamsta/nvim-dap-virtual-text",
+      "mfussenegger/nvim-dap-python",
     },
 
     -- stylua: ignore
@@ -38,11 +39,38 @@ return {
       local dap = require('dap')
       local dapui = require('dapui')
 
+
+      -- Python
+      dap.adapters.python = {
+        type = "executable",
+        command = "dlv",
+        args = {"dap"},
+      }
+
+      dap.configurations.python = {
+        {
+          type = 'python';
+          request = 'launch';
+          name = "Launch file";
+          program = "${file}";
+          pythonPath = function()
+            return '/usr/bin/python3'
+          end;
+        },
+      }
+
+      local venv = os.getenv("VIRTUAL_ENV")
+      local python_path = venv and (venv .. "/bin/python") or "python3"
+      require("dap-python").setup(python_path)
+
+
+      -- Golang
       dap.adapters.go = {
         type = "executable",
         command = "dlv",
         args = {"dap"},
       }
+
       require('dap-go').setup({
         dap_configurations = {
           {
@@ -70,6 +98,7 @@ return {
             end,
             console = "integratedTerminal",
           },
+
         }
       })
 
