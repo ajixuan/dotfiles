@@ -12,19 +12,12 @@ return {
       -- lua & third party sources -- See https://github.com/ms-jpq/coq.thirdparty
       -- Need to **configure separately**
       { 'ms-jpq/coq.thirdparty', branch = "3p" }
-      -- - shell repl
-      -- - nvim lua api
-      -- - scientific calculator
-      -- - comment banner
-      -- - etc
     },
     init = function()
-
 
       vim.g.coq_settings = {
           -- start coq at startup
           auto_start = 'shut-up',
-
           keymap = {
             jump_to_mark = '',
           }
@@ -54,6 +47,16 @@ return {
               unusedparams = true,
             },
           }
+        }
+      })
+
+      vim.lsp.enable('pyright')
+      vim.lsp.config('pyright', {
+        on_attach = on_attach,
+        settings = {
+          python = {
+            pythonPath = vim.fn.exepath("python3"),
+         }
         }
       })
 
