@@ -28,10 +28,10 @@ return {
       { "<leader>dP", function() require("dap").pause() end, desc = "Pause" },
       { "<leader>dR", function() require("dap").repl.toggle() end, desc = "Toggle REPL" },
       { "<leader>dr", function() require("dap").clear_breakpoints() end, desc = "Clear breakpoints" },
-      { "<leader>ds", function() require("dap").session() end, desc = "Session" },
-      { "<leader>dt", function() require("dap").terminate() end, desc = "Terminate" },
+      { "<leader>ds", function() require("dap").terminate() end, desc = "Terminate" },
       { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
       { "<leader>du", function() require("dapui").toggle() end, desc = "Close dapui" },
+      { "<Leader>dt", function() require("dap-python").test_method() end, { desc = "Debug nearest test method" }},
     },
 
     config = function()
@@ -41,28 +41,43 @@ return {
 
 
       -- Python
-      dap.adapters.python = {
-        type = "executable",
-        command = "dlv",
-        args = {"dap"},
-      }
+      local resolve_python = function()
+        local venv = os.getenv("VIRTUAL_ENV")
+        local python_path = venv and (venv .. "/bin/python") or "python3"
+        return python_path
+      end
 
-      dap.configurations.python = {
-        {
+      require("dap-python").setup(resolve_python())
+      require("dap-python").test_runner = 'unittest'
+      require("dap-python").resolve_python = resolve_python
+
+      --dap.adapters.python = {
+      --  type = "executable",
+      --  command = "dlv",
+      --  args = {"dap"},
+      --}
+
+      table.insert(dap.configurations.python, 1, {
           type = 'python';
           request = 'launch';
           name = "Launch file";
           program = "${file}";
           pythonPath = function()
-            return '/usr/bin/python3'
+            return python_path
           end;
-        },
-      }
+      })
 
-      local venv = os.getenv("VIRTUAL_ENV")
-      local python_path = venv and (venv .. "/bin/python") or "python3"
-      require("dap-python").setup(python_path)
-
+      --table.insert(dap.configurations.python, {
+      --    type = 'python';
+      --    request = 'launch';
+      --    name = "Test File";
+      --    module = "unittest";
+      --    args = "-v";
+      --    pythonPath = function()
+      --      return python_path
+      --    end;
+      --})
+      --
 
       -- Golang
       dap.adapters.go = {

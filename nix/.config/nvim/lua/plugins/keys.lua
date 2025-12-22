@@ -7,7 +7,7 @@ return  {
 
     opts = {
        triggers = {
-         { "<auto>", mode = "nixsoc" },
+         { "<auto>", mode = "nxsoc" },
        }
     }
   }
