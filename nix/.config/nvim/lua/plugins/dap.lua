@@ -31,41 +31,12 @@ return {
       { "<leader>ds", function() require("dap").terminate() end, desc = "Terminate" },
       { "<leader>dw", function() require("dap.ui.widgets").hover() end, desc = "Widgets" },
       { "<leader>du", function() require("dapui").toggle() end, desc = "Close dapui" },
-      { "<Leader>dt", function() require("dap-python").test_method() end, { desc = "Debug nearest test method" }},
     },
 
     config = function()
       -- dap configs
       local dap = require('dap')
       local dapui = require('dapui')
-
-
-      -- Python
-      local resolve_python = function()
-        local venv = os.getenv("VIRTUAL_ENV")
-        local python_path = venv and (venv .. "/bin/python") or "python3"
-        return python_path
-      end
-
-      require("dap-python").setup(resolve_python())
-      require("dap-python").test_runner = 'unittest'
-      require("dap-python").resolve_python = resolve_python
-
-      --dap.adapters.python = {
-      --  type = "executable",
-      --  command = "dlv",
-      --  args = {"dap"},
-      --}
-
-      table.insert(dap.configurations.python, 1, {
-          type = 'python';
-          request = 'launch';
-          name = "Launch file";
-          program = "${file}";
-          pythonPath = function()
-            return python_path
-          end;
-      })
 
       --table.insert(dap.configurations.python, {
       --    type = 'python';
@@ -122,5 +93,34 @@ return {
       dap.listeners.before.attach.dapui_config = function() dapui.open() end
       dap.listeners.before.launch.dapui_config = function() dapui.open() end
     end
+  },
+  {
+      "mfussenegger/nvim-dap-python",
+      dependencies = {
+        "mfussenegger/nvim-dap"
+      },
+      keys = {
+        { "<Leader>dt", function() require("dap-python").test_method() end, { desc = "Debug nearest test method" }},
+      },
+      config = function()
+        local dap = require('dap')
+        local resolve_python = function()
+          local venv = os.getenv("VIRTUAL_ENV")
+          local python_path = venv and (venv .. "/bin/python") or "python3"
+          return python_path
+        end
+
+        require("dap-python").setup(resolve_python())
+        require("dap-python").test_runner = 'unittest'
+        require("dap-python").resolve_python = resolve_python
+
+        table.insert(dap.configurations.python, 1, {
+            type = 'python';
+            request = 'launch';
+            name = "Launch file";
+            program = "${file}";
+            pythonPath = resolve_python;
+        })
+      end
   }
 }
