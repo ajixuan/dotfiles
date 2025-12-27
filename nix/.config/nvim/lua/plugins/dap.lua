@@ -105,11 +105,21 @@ return {
         table.insert(dap.configurations.python, 1, {
             type = 'python';
             request = 'launch';
+            name = "Test Discover";
+            module = "unittest";
+            args = {"-v", "discover"};
+            pythonPath = resolve_python;
+        })
+
+        table.insert(dap.configurations.python, 1, {
+            type = 'python';
+            request = 'launch';
             name = "Test File";
             module = "unittest";
             args = {"-v", "${file}"};
             pythonPath = resolve_python;
         })
+
 
         table.insert(dap.configurations.python, 1, {
             type = 'python';
@@ -119,5 +129,6 @@ return {
             pythonPath = resolve_python;
         })
       end
+
   }
 }
