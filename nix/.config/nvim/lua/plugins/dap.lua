@@ -38,17 +38,6 @@ return {
       local dap = require('dap')
       local dapui = require('dapui')
 
-      --table.insert(dap.configurations.python, {
-      --    type = 'python';
-      --    request = 'launch';
-      --    name = "Test File";
-      --    module = "unittest";
-      --    args = "-v";
-      --    pythonPath = function()
-      --      return python_path
-      --    end;
-      --})
-      --
 
       -- Golang
       dap.adapters.go = {
@@ -112,7 +101,15 @@ return {
 
         require("dap-python").setup(resolve_python())
         require("dap-python").test_runner = 'unittest'
-        require("dap-python").resolve_python = resolve_python
+
+        table.insert(dap.configurations.python, 1, {
+            type = 'python';
+            request = 'launch';
+            name = "Test File";
+            module = "unittest";
+            args = {"-v", "${file}"};
+            pythonPath = resolve_python;
+        })
 
         table.insert(dap.configurations.python, 1, {
             type = 'python';
