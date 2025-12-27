@@ -1,2 +1,4 @@
 require("config.lazy")
 require("config.telescope")
+require("config.diagnostic")
+require("config.terminal")

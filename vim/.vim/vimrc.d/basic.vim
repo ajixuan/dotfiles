@@ -205,27 +205,6 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
-" Quick resize windows
-"nnoremap <silent> <leader>l :exe "vertical resize " . (winwidth(0) * 2/5)<CR>
-"nnoremap <silent> <leader>h :exe "vertical resize " . (winwidth(0) * 5/3)<CR>
-"nnoremap <silent> <leader>j :exe "resize " . (winheight(0) * 2/5)<CR>
-"nnoremap <silent> <leader>k :exe "resize " . (winheight(0) * 5/3)<CR>
-
-" VSP and SP
-map <leader>\| :vsp<CR><c-p><CR>
-map <leader>- :sp<CR><c-p><CR>
-
-" Useful mappings for managing tabs
-nmap <C-c> :tabclose<CR>
-nmap <leader>tn :tabn<CR>
-nmap <leader>tp :tabp<CR>
-nmap <C-t> :tabnew<CR>
-
-" Let 'tl' toggle between this and the last accessed tab
-let g:lasttab = 1
-nmap <leader>tl :exe "tabn ".g:lasttab<CR>
-autocmd TabLeave * let g:lasttab = tabpagenr()
-
 " Opens a new tab with the current buffer's path
 " Super useful when editing files in the same directory
 map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
@@ -299,7 +278,7 @@ inoremap <C-n> <esc>:nohl<CR>i
 vnoremap <leader>y "*y<CR>
 
 " Edit vimrc
-nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+nnoremap <leader>er :vsplit $MYVIMRC<cr>
 
 " Fast quotes
 nnoremap <leader>" viw<esc>a"<esc>bi"<esc>lel
