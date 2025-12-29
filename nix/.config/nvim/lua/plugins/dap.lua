@@ -89,7 +89,11 @@ return {
         "mfussenegger/nvim-dap"
       },
       keys = {
-        { "<Leader>dt", function() require("dap-python").test_method() end, { desc = "Debug nearest test method" }},
+        { "<Leader>dt", function() require("dap-python").test_method({
+          config = {
+            justMyCode = false,
+          }
+        }) end, { desc = "Debug nearest test method" }},
       },
       config = function()
         local dap = require('dap')
