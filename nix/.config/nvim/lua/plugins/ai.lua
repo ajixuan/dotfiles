@@ -8,11 +8,27 @@ return {
     opts = {
       log_level = "DEBUG",
       send_code = false,
+      interactions =  {
+        chat = {
+          adapter = {
+            name = "copilot"
+          }
+        }
+
+      }
     },
     config = function()
       require("codecompanion").setup({
         adapters = {
           http = {
+            copilot = function()
+              return require("codecompanion.adapters").extend("copilot", {
+                name = "copilot",
+                env = {
+                  api_key = "cmd: gpg --batch --quiet --decrypt ../llms/copilot.gpg"
+                },
+              })
+            end,
             venice = function()
               return require("codecompanion.adapters").extend("deepseek", {
                 name = "venice",
@@ -34,5 +50,9 @@ return {
       })
     end
   },
+  {
+
+
+  }
 }
 
