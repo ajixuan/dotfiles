@@ -59,6 +59,6 @@ end
 vim.api.nvim_create_user_command("ToggleFloatTerm", toggle_floating_terminal, {})
 
 -- Map a key (e.g., <leader>ft) to toggle the terminal
-vim.api.nvim_set_keymap("n", "<leader>t", ":ToggleFloatTerm<CR>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("t", "<leader>t", "<C-\\><C-n>:ToggleFloatTerm<CR>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("n", "<leader>ot", ":ToggleFloatTerm<CR>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("t", "<leader>ot", "<C-\\><C-n>:ToggleFloatTerm<CR>", { noremap = true, silent = true })
 
