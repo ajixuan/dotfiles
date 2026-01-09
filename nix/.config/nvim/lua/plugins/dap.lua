@@ -124,6 +124,17 @@ return {
             pythonPath = resolve_python;
         })
 
+        table.insert(dap.configurations.python, 1, {
+            type = 'python';
+            request = 'launch';
+            name = "Launch file with args";
+            program = "${file}";
+            args = function()
+              return vim.fn.split(vim.fn.input("Args: "))
+            end,
+            cwd = "${workspaceFolder}",
+            pythonPath = resolve_python;
+        })
 
         table.insert(dap.configurations.python, 1, {
             type = 'python';
