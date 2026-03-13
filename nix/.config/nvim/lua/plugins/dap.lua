@@ -77,6 +77,9 @@ return {
         }
       })
 
+
+
+
       -- Auto-open dapui on debug session start
       dapui.setup()
       dap.listeners.before.attach.dapui_config = function() dapui.open() end
