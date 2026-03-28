@@ -33,9 +33,6 @@ return {
         map("n", "<leader>D", vim.lsp.buf.type_definition, { desc = "Go to type definition"})
       end
 
-      vim.diagnostic.config({
-        virtual_text = true,
-      })
       vim.lsp.enable('gopls')
       vim.lsp.config('gopls', {
         on_attach = on_attach,
@@ -68,8 +65,6 @@ return {
         on_attach = on_attach,
         capabilities = capabilities,
       })
-
-      vim.keymap.set('n', '<leader>go', vim.diagnostic.open_float, { desc = 'Open floating diagnostic window' })
 
     end,
   },
@@ -159,18 +154,6 @@ return {
         },
       }
     end,
-    opts = {
-      ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "go" },
-        -- Install parsers synchronously (only applied to `ensure_installed`)
-        sync_install = false,
-
-        -- Automatically install missing parsers when entering buffer
-        -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-        auto_install = true,
-        autotag = {
-          enable = true,
-        }
-    }
   },
   {
     "m4xshen/autoclose.nvim",
