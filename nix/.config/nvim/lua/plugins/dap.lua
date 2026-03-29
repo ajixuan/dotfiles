@@ -40,12 +40,6 @@ return {
 
 
       -- Golang
-      dap.adapters.go = {
-        type = "executable",
-        command = "dlv",
-        args = {"dap"},
-      }
-
       require('dap-go').setup({
         dap_configurations = {
           {
@@ -62,18 +56,6 @@ return {
               return vim.split(input, " ", { trimempty = true })
             end,
           },
-          {
-            type = "go",
-            request = "launch",
-            name = "lolpersist",
-            mode = "test",
-            program = function()
-              local default_dir = vim.fn.expand("%:p:h")
-              return vim.fn.input("Test dir: ", default_dir, "dir")
-            end,
-            console = "integratedTerminal",
-          },
-
         }
       })
 
@@ -84,6 +66,8 @@ return {
       dapui.setup()
       dap.listeners.before.attach.dapui_config = function() dapui.open() end
       dap.listeners.before.launch.dapui_config = function() dapui.open() end
+      dap.listeners.before.event_terminated.dapui_config = function() dapui.close() end
+      dap.listeners.before.event_exited.dapui_config = function() dapui.close() end
     end
   },
   {

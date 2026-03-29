@@ -10,6 +10,9 @@ return {
         },
         sync_root_with_cwd = true,
         disable_netrw = true,
+        git = {
+          ignore = false,
+        },
       }
     end
   }
