@@ -1,0 +1,12 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "denyRead": ["./**"],
+      "denyWrite": ["./**"],
+      "allowRead": ["/home/aji/dotfiles/nix/.tmux.conf"],
+      "allowWrite": ["/home/aji/dotfiles/nix/.tmux.conf"]
+    }
+  }
+}
+
