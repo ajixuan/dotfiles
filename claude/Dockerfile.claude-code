@@ -37,4 +37,4 @@ RUN useradd -m -s /bin/bash claude
 USER claude
 WORKDIR /home/claude/project
 
-ENTRYPOINT ["claude", "--dangerously-skip-permissions"]
+ENTRYPOINT ["bash"]

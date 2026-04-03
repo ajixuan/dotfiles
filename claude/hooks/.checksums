@@ -1,0 +1,5 @@
+6bfcd59eb2179ab107bea285a6e2a5f1e7139eae529324a6653890994010cc84  .claude/hooks/block-destructive.sh
+429b2b77d663ddba6d3d5e2d81d8ebae177035c3847e81208f7cfa52860e062e  .claude/hooks/block-self-edit.sh
+bac64f018ee35e35b8fd73060c29e77b767f491daee8da3ed380d1c4d1be1aa5  .claude/hooks/checksum-verify.sh
+54750492c10eae83820ba21e909f41aa9ddaa3eec367b4d0f649158085c4ef3f  .claude/hooks/review-changes.sh
+08da392805d38f0178f1436a7fedb6a29c283c5b92af4967d25670b5fe001190  .claude/settings.local.json
