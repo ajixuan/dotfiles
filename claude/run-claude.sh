@@ -80,7 +80,7 @@ if [[ -d "$AZURE_DIR" ]]; then
     cp -r "$AZURE_DIR"/. "$AZURE_TMPDIR"/
     chmod -R u+rwX,go-rwx "$AZURE_TMPDIR"
     sudo chown -R "$CLAUDE_UID:$CLAUDE_UID" "$AZURE_TMPDIR"
-    AZURE_MOUNT_ARGS=(-v "$AZURE_TMPDIR:/home/claude/.azure")
+    AZURE_MOUNT_ARGS=(-v "$AZURE_TMPDIR:/home/claude/.azure:ro")
 else
     echo "Warning: Azure config dir '$AZURE_DIR' not found. Azure auth may fail." >&2
 fi
@@ -89,24 +89,39 @@ fi
 KUBE_MOUNT_ARGS=()
 KUBE_TMPDIR=""
 if [[ "$MOUNT_KUBE" == true ]]; then
-    KUBECONFIG_SRC="${KUBECONFIG:-$HOME/.kube/config}"
+    KUBECONFIG_SRC="${KUBECONFIG:-$HOME/.kube/infra-config}"
     if [[ -f "$KUBECONFIG_SRC" ]]; then
         KUBE_TMPDIR="$(mktemp -d /tmp/claude-kube-XXXXXX)"
-        cp "$KUBECONFIG_SRC" "$KUBE_TMPDIR/config"
-        chmod 600 "$KUBE_TMPDIR/config"
+        cp "$KUBECONFIG_SRC" "$KUBE_TMPDIR/infra-config"
+        chmod 600 "$KUBE_TMPDIR/infra-config"
         sudo chown -R "$CLAUDE_UID:$CLAUDE_UID" "$KUBE_TMPDIR"
-        KUBE_MOUNT_ARGS=(-v "$KUBE_TMPDIR:/home/claude/.kube")
+        KUBE_MOUNT_ARGS=(-v "$KUBE_TMPDIR:/home/claude/.kube:ro")
     else
         echo "Warning: Kubeconfig '$KUBECONFIG_SRC' not found. kubectl may not work." >&2
     fi
+fi
+
+# --- Global Claude settings (read-only) ---
+SETTINGS_MOUNT_ARGS=()
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+if [[ -f "$CLAUDE_SETTINGS" ]]; then
+    SETTINGS_MOUNT_ARGS=(-v "$CLAUDE_SETTINGS:/home/claude/.claude/settings.json:ro")
 fi
 
 # Clean up temp dirs when the container exits
 trap 'sudo rm -rf "$AZURE_TMPDIR" "$KUBE_TMPDIR"' EXIT
 
 exec docker run --rm -it \
+    --read-only \
+    --tmpfs /tmp:noexec,nosuid,size=256m \
+    --cap-drop=ALL \
+    --security-opt=no-new-privileges \
+    --memory=4g \
+    --cpus=2 \
+    --pids-limit=256 \
     -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
     "${AZURE_MOUNT_ARGS[@]}" \
     "${KUBE_MOUNT_ARGS[@]}" \
+    "${SETTINGS_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"

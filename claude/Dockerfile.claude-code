@@ -1,3 +1,29 @@
+# ---- stage 1: build azure-cli into a self-contained venv ----
+FROM node:22-slim AS az-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-pip python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m venv /opt/az \
+    && /opt/az/bin/pip install --no-cache-dir azure-cli \
+    # Strip management-plane SDKs (198 MB) — only data-plane SDKs are kept
+    && rm -rf /opt/az/lib/python3.*/site-packages/azure/mgmt \
+    # Strip CLI command modules (~95 MB) — keep only profile (az account/login),
+    # cloud, config, and extension; remove everything else
+    && find /opt/az/lib/python3.*/site-packages/azure/cli/command_modules \
+         -mindepth 1 -maxdepth 1 -type d \
+         ! -name profile ! -name cloud ! -name configure ! -name config ! -name extension \
+         -exec rm -rf {} + \
+    # Strip build-time tools not needed at runtime
+    && rm -rf /opt/az/lib/python3.*/site-packages/pip \
+              /opt/az/lib/python3.*/site-packages/setuptools \
+              /opt/az/lib/python3.*/site-packages/pygments \
+    && find /opt/az -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true \
+    && find /opt/az -type d -name tests -exec rm -rf {} + 2>/dev/null; true \
+    && find /opt/az -name '*.pyc' -delete 2>/dev/null; true
+
+# ---- stage 2: final image ----
 FROM node:22-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -6,21 +32,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     ripgrep \
     ca-certificates \
-    gnupg \
-    lsb-release \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -sLS https://packages.microsoft.com/keys/microsoft.asc \
-       | gpg --dearmor > /etc/apt/keyrings/microsoft.gpg \
-    && chmod go+r /etc/apt/keyrings/microsoft.gpg \
-    && AZ_DIST=$(lsb_release -cs) \
-    && printf "Types: deb\nURIs: https://packages.microsoft.com/repos/azure-cli/\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-by: /etc/apt/keyrings/microsoft.gpg\n" \
-       "$AZ_DIST" "$(dpkg --print-architecture)" \
-       > /etc/apt/sources.list.d/azure-cli.sources \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends azure-cli \
-    && rm -rf /var/lib/apt/lists/*
+# Azure CLI venv from builder
+COPY --from=az-builder /opt/az /opt/az
+RUN ln -s /opt/az/bin/az /usr/local/bin/az
 
 RUN curl -fsSL "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl" \
        -o /usr/local/bin/kubectl \
