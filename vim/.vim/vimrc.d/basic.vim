@@ -135,10 +135,13 @@ set nowb
 set noswapfile
 
 " Telescope
-nnoremap <leader>ff <cmd>lua require('telescope.builtin').find_files()<cr>
-nnoremap <leader>fg <cmd>lua require('telescope.builtin').live_grep()<cr>
+nnoremap <leader>ff <cmd>lua require('telescope.builtin').find_files({ hidden = true, file_ignore_patterns = { '%.git/' } })<cr>
+nnoremap <leader>fg <cmd>lua require('telescope.builtin').live_grep({ additional_args = { '--hidden', '--glob', '!.git/' } })<cr>
 nnoremap <leader>fb <cmd>lua require('telescope.builtin').buffers()<cr>
 nnoremap <leader>fh <cmd>lua require('telescope.builtin').help_tags()<cr>
+nnoremap <leader>e <cmd>lua vim.diagnostic.open_float()<cr>
+nnoremap <leader>- :split<cr>
+nnoremap <leader>\| :vsplit<cr>
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -171,6 +174,9 @@ set splitbelow
 
 " Toggle line numbers and fold column for easy copying
 nnoremap <F2> :set number!<CR>:set relativenumber!<CR>:set foldcolumn=0<CR>
+
+" Toggle between relative and absolute line numbers
+nnoremap <leader>rn :set relativenumber!<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Moving around
