@@ -136,6 +136,17 @@ if [[ -f "$CLAUDE_SETTINGS" ]]; then
     SETTINGS_MOUNT_ARGS=(-v "$CLAUDE_SETTINGS:/home/claude/.claude/settings.json:ro")
 fi
 
+# --- Global Claude config dir (hooks, statusline) mounted read-only ---
+GLOBAL_MOUNT_ARGS=()
+GLOBAL_DIR="$SCRIPT_DIR/global"
+if [[ -d "$GLOBAL_DIR" ]]; then
+    for entry in "$GLOBAL_DIR"/* "$GLOBAL_DIR"/.[!.]*; do
+        [[ -e "$entry" ]] || continue
+        base="$(basename "$entry")"
+        GLOBAL_MOUNT_ARGS+=(-v "$entry:/home/claude/.claude/$base:ro")
+    done
+fi
+
 docker run --rm -it \
     --tmpfs /tmp:noexec,nosuid,size=256m \
     --cap-drop=ALL \
@@ -147,5 +158,6 @@ docker run --rm -it \
     "${AZURE_MOUNT_ARGS[@]}" \
     "${KUBE_MOUNT_ARGS[@]}" \
     "${SETTINGS_MOUNT_ARGS[@]}" \
+    "${GLOBAL_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"
