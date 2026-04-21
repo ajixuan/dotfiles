@@ -7,23 +7,26 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/claude/project"
 
 usage() {
-    echo "Usage: $0 [--kube] <dir1> [dir2] [dir3] ..."
+    echo "Usage: $0 [--kube] [--azure] <dir1> [dir2] [dir3] ..."
     echo ""
     echo "Bind-mounts each directory into the container's $WORKDIR/<basename>."
     echo "Builds the image from $DOCKERFILE if it doesn't already exist."
     echo ""
     echo "Options:"
-    echo "  --kube    Mount kubeconfig into the container"
+    echo "  --kube     Mount kubeconfig into the container"
+    echo "  --azure    Mount Azure CLI credentials into the container"
     exit 1
 }
 
 # Parse flags
 MOUNT_KUBE=false
+MOUNT_AZURE=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
-        --kube) MOUNT_KUBE=true ;;
-        *)      DIRS+=("$arg") ;;
+        --kube)  MOUNT_KUBE=true ;;
+        --azure) MOUNT_AZURE=true ;;
+        *)       DIRS+=("$arg") ;;
     esac
 done
 
@@ -71,18 +74,20 @@ done
 # credentials untouched while giving az a working cache inside the container.
 CLAUDE_UID="$(docker run --rm --entrypoint id claude-code -u)"
 
-# --- Azure credentials (copied to a writable tmpdir) ---
-AZURE_DIR="${AZURE_CONFIG_DIR:-$HOME/.azure}"
+# --- Azure credentials (opt-in via --azure, copied to a writable tmpdir) ---
 AZURE_MOUNT_ARGS=()
 AZURE_TMPDIR=""
-if [[ -d "$AZURE_DIR" ]]; then
-    AZURE_TMPDIR="$(mktemp -d /tmp/claude-azure-XXXXXX)"
-    cp -r "$AZURE_DIR"/. "$AZURE_TMPDIR"/
-    chmod -R u+rwX,go-rwx "$AZURE_TMPDIR"
-    sudo chown -R "$CLAUDE_UID:$CLAUDE_UID" "$AZURE_TMPDIR"
-    AZURE_MOUNT_ARGS=(-v "$AZURE_TMPDIR:/home/claude/.azure:ro")
-else
-    echo "Warning: Azure config dir '$AZURE_DIR' not found. Azure auth may fail." >&2
+if [[ "$MOUNT_AZURE" == true ]]; then
+    AZURE_DIR="${AZURE_CONFIG_DIR:-$HOME/.azure}"
+    if [[ -d "$AZURE_DIR" ]]; then
+        AZURE_TMPDIR="$(mktemp -d /tmp/claude-azure-XXXXXX)"
+        cp -r "$AZURE_DIR"/. "$AZURE_TMPDIR"/
+        chmod -R u+rwX,go-rwx "$AZURE_TMPDIR"
+        sudo chown -R "$CLAUDE_UID:$CLAUDE_UID" "$AZURE_TMPDIR"
+        AZURE_MOUNT_ARGS=(-v "$AZURE_TMPDIR:/home/claude/.azure:ro")
+    else
+        echo "Warning: Azure config dir '$AZURE_DIR' not found. Azure auth may fail." >&2
+    fi
 fi
 
 # --- Kubeconfig (opt-in via --kube, copied to a writable tmpdir) ---
@@ -112,7 +117,6 @@ fi
 trap 'sudo rm -rf "$AZURE_TMPDIR" "$KUBE_TMPDIR"' EXIT
 
 exec docker run --rm -it \
-    --read-only \
     --tmpfs /tmp:noexec,nosuid,size=256m \
     --cap-drop=ALL \
     --security-opt=no-new-privileges \
