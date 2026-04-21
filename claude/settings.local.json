@@ -121,7 +121,7 @@
     ]
   },
   "sandbox": {
-    "enabled": true,
+    "enabled": false,
     "excludedCommands": ["go", "gofmt", "npm", "node", "python3", "npx"],
     "allowUnsandboxedCommands": true,
     "failIfUnavailable": true,
