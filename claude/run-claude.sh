@@ -68,39 +68,62 @@ for dir in "${DIRS[@]}"; do
     echo "  $abs_dir -> $WORKDIR/$base"
 done
 
-# Copy Azure CLI credentials into a tmpdir and mount that (writable) into
-# the container.  MSAL needs to create lock files and refresh tokens, so a
-# read-only bind-mount of the host dir fails.  Copying keeps the host
-# credentials untouched while giving az a working cache inside the container.
-CLAUDE_UID="$(docker run --rm --entrypoint id claude-code -u)"
+# Credentials are copied into anonymous docker volumes rather than bind-mounted
+# from the host.  A bind-mount would require chowning the host path to the
+# container UID (needs sudo, and the host files end up owned by that UID),
+# whereas a volume can be populated and chowned from inside a helper container
+# running as root.  The volumes are deleted on exit so creds don't persist.
+CLAUDE_UID="$(docker run --rm --entrypoint id "$IMAGE_NAME" -u)"
 
-# --- Azure credentials (opt-in via --azure, copied to a writable tmpdir) ---
+VOLUMES_TO_CLEAN=()
+cleanup() {
+    for vol in "${VOLUMES_TO_CLEAN[@]}"; do
+        docker volume rm -f "$vol" >/dev/null 2>&1 || true
+    done
+}
+trap cleanup EXIT
+
+# Stream the source files into the helper via tar on stdin rather than
+# bind-mounting the host dir.  Under docker userns-remap, container UID 0 maps
+# to a host subuid that can't read $HOME-owned files even if they have 0600,
+# so a bind-mount hits EACCES.  Reading happens on the host instead, where we
+# own the files.
+populate_volume_from_tar() {
+    local volume="$1" extract_cmd="$2"
+    docker run --rm -i --user 0 --entrypoint sh \
+        -v "$volume:/dst" \
+        "$IMAGE_NAME" \
+        -c "$extract_cmd && chown -R $CLAUDE_UID:$CLAUDE_UID /dst" \
+        >/dev/null
+}
+
+# --- Azure credentials (opt-in via --azure) ---
 AZURE_MOUNT_ARGS=()
-AZURE_TMPDIR=""
 if [[ "$MOUNT_AZURE" == true ]]; then
     AZURE_DIR="${AZURE_CONFIG_DIR:-$HOME/.azure}"
     if [[ -d "$AZURE_DIR" ]]; then
-        AZURE_TMPDIR="$(mktemp -d /tmp/claude-azure-XXXXXX)"
-        cp -r "$AZURE_DIR"/. "$AZURE_TMPDIR"/
-        chmod -R u+rwX,go-rwx "$AZURE_TMPDIR"
-        sudo chown -R "$CLAUDE_UID:$CLAUDE_UID" "$AZURE_TMPDIR"
-        AZURE_MOUNT_ARGS=(-v "$AZURE_TMPDIR:/home/claude/.azure:ro")
+        AZURE_VOLUME="$(docker volume create)"
+        VOLUMES_TO_CLEAN+=("$AZURE_VOLUME")
+        tar -C "$AZURE_DIR" -cf - . \
+            | populate_volume_from_tar "$AZURE_VOLUME" \
+                "tar -xf - -C /dst && chmod -R u+rwX,go-rwx /dst"
+        AZURE_MOUNT_ARGS=(-v "$AZURE_VOLUME:/home/claude/.azure")
     else
         echo "Warning: Azure config dir '$AZURE_DIR' not found. Azure auth may fail." >&2
     fi
 fi
 
-# --- Kubeconfig (opt-in via --kube, copied to a writable tmpdir) ---
+# --- Kubeconfig (opt-in via --kube) ---
 KUBE_MOUNT_ARGS=()
-KUBE_TMPDIR=""
 if [[ "$MOUNT_KUBE" == true ]]; then
     KUBECONFIG_SRC="${KUBECONFIG:-$HOME/.kube/infra-config}"
     if [[ -f "$KUBECONFIG_SRC" ]]; then
-        KUBE_TMPDIR="$(mktemp -d /tmp/claude-kube-XXXXXX)"
-        cp "$KUBECONFIG_SRC" "$KUBE_TMPDIR/infra-config"
-        chmod 600 "$KUBE_TMPDIR/infra-config"
-        sudo chown -R "$CLAUDE_UID:$CLAUDE_UID" "$KUBE_TMPDIR"
-        KUBE_MOUNT_ARGS=(-v "$KUBE_TMPDIR:/home/claude/.kube:ro")
+        KUBE_VOLUME="$(docker volume create)"
+        VOLUMES_TO_CLEAN+=("$KUBE_VOLUME")
+        cat "$KUBECONFIG_SRC" \
+            | populate_volume_from_tar "$KUBE_VOLUME" \
+                "cat > /dst/infra-config && chmod 600 /dst/infra-config"
+        KUBE_MOUNT_ARGS=(-v "$KUBE_VOLUME:/home/claude/.kube")
     else
         echo "Warning: Kubeconfig '$KUBECONFIG_SRC' not found. kubectl may not work." >&2
     fi
@@ -113,10 +136,7 @@ if [[ -f "$CLAUDE_SETTINGS" ]]; then
     SETTINGS_MOUNT_ARGS=(-v "$CLAUDE_SETTINGS:/home/claude/.claude/settings.json:ro")
 fi
 
-# Clean up temp dirs when the container exits
-trap 'sudo rm -rf "$AZURE_TMPDIR" "$KUBE_TMPDIR"' EXIT
-
-exec docker run --rm -it \
+docker run --rm -it \
     --tmpfs /tmp:noexec,nosuid,size=256m \
     --cap-drop=ALL \
     --security-opt=no-new-privileges \
