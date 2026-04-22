@@ -40,6 +40,19 @@ else
     echo "Image '$IMAGE_NAME' already exists."
 fi
 
+# Bring up sidecar services defined in docker-compose.yml (postgres, etc.)
+# and attach the claude container to the same network (claude-net) so it can
+# reach them by service name. Compose state + named volumes persist across
+# sessions on purpose — the postgres data is meant to be reusable.
+COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+COMPOSE_NETWORK="claude-net"
+if [[ -f "$COMPOSE_FILE" ]]; then
+    echo "Starting sidecar services from $COMPOSE_FILE..."
+    docker compose -f "$COMPOSE_FILE" up -d --wait
+else
+    echo "Warning: $COMPOSE_FILE not found; skipping sidecar services." >&2
+fi
+
 # Default to a fresh throwaway git repo if no directories given, so the
 # worktree pipeline below has something to operate on.
 if [[ ${#DIRS[@]} -lt 1 ]]; then
@@ -100,6 +113,13 @@ cleanup() {
     echo "  docker rm $CONTAINER_NAME"
     if [[ ${#SESSION_VOLUMES[@]} -gt 0 ]]; then
         echo "  docker volume rm ${SESSION_VOLUMES[*]}"
+    fi
+    if [[ -f "$COMPOSE_FILE" ]]; then
+        echo ""
+        echo "Sidecar services (postgres, ...) are left running. To stop them:"
+        echo "  docker compose -f $COMPOSE_FILE down"
+        echo "To stop and wipe their data volumes as well:"
+        echo "  docker compose -f $COMPOSE_FILE down -v"
     fi
 }
 trap cleanup EXIT
@@ -207,6 +227,25 @@ fi
 
 CLAUDE_CONFIG_MOUNT_ARGS=(-v "$CLAUDE_CONFIG_VOLUME:/home/claude/.claude")
 
+# Attach to the compose-managed network (if compose is in use) so the
+# container can reach 'postgres' by service name. Skip silently if compose
+# isn't set up — falls back to docker's default bridge network.
+NETWORK_ARGS=()
+if docker network inspect "$COMPOSE_NETWORK" >/dev/null 2>&1; then
+    NETWORK_ARGS=(--network "$COMPOSE_NETWORK")
+fi
+
+# PG* env vars so psql / standard postgres client libraries connect to the
+# shared sidecar container without any extra config. The 'postgres' hostname
+# resolves on the claude-net docker network.
+POSTGRES_ENV_ARGS=(
+    -e PGHOST=postgres
+    -e PGPORT=5432
+    -e PGUSER=claude
+    -e PGPASSWORD=claude
+    -e PGDATABASE=claude
+)
+
 docker run -it \
     --name "$CONTAINER_NAME" \
     --tmpfs /tmp:noexec,nosuid,size=256m \
@@ -216,6 +255,8 @@ docker run -it \
     --cpus=2 \
     --pids-limit=256 \
     -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+    "${POSTGRES_ENV_ARGS[@]}" \
+    "${NETWORK_ARGS[@]}" \
     "${AZURE_MOUNT_ARGS[@]}" \
     "${KUBE_MOUNT_ARGS[@]}" \
     "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \

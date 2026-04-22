@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: claude-postgres
+    environment:
+      POSTGRES_USER: claude
+      POSTGRES_PASSWORD: claude
+      POSTGRES_DB: claude
+    volumes:
+      - claude-postgres-data:/var/lib/postgresql/data
+    networks:
+      - claude-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claude -d claude"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  claude-net:
+    name: claude-net
+    driver: bridge
+
+volumes:
+  claude-postgres-data:
+    name: claude-postgres-data
