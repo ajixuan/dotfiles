@@ -15,11 +15,6 @@ usage() {
 SRC="${1#/}"
 DST="$2"
 
-if [[ "$SRC" != project/* ]]; then
-    echo "Error: first argument must be of the form project/<dir> (got: $1)" >&2
-    exit 1
-fi
-
 # docker ps -a lists newest first by default, so head -n1 picks the latest run.
 CONTAINER="$(docker ps -a --filter 'name=^claude-code-' --format '{{.Names}}' | head -n1)"
 if [[ -z "$CONTAINER" ]]; then
@@ -30,7 +25,7 @@ fi
 mkdir -p "$DST"
 
 echo "Copying $CONTAINER:/home/claude/$SRC/. -> $DST"
-docker cp "$CONTAINER:/home/claude/$SRC/." "$DST"
+docker cp "$CONTAINER:/home/claude/project/$SRC/." "$DST"
 
 echo "Done. If files are owned by a userns subuid, reclaim them with:"
 echo "  sudo chown -R $(id -u):$(id -g) $DST"
