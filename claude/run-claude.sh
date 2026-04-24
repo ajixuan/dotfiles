@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/claude/project"
 
 usage() {
-    echo "Usage: $0 [--kube] [--azure] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--kube] [--azure] [--postgres] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
     echo "Each argument must be a git repository. A clone of the repo at HEAD"
     echo "is copied into a named docker volume and mounted at $WORKDIR/<basename>."
@@ -15,26 +15,40 @@ usage() {
     echo "shutdown so you can copy work back to the host."
     echo ""
     echo "Options:"
-    echo "  --kube     Mount kubeconfig into the container"
-    echo "  --azure    Mount Azure CLI credentials into the container"
+    echo "  --kube       Mount kubeconfig into the container"
+    echo "  --azure      Mount Azure CLI credentials into the container"
+    echo "  --gitconfig  Mount ~/.gitconfig into the container"
+    echo "  --postgres   Start the postgres sidecar (docker-compose.yml) and"
+    echo "               attach the claude container to the claude-net network"
+    echo "  --rebuild    Force rebuild of the claude-code image"
     exit 1
 }
 
 # Parse flags
 MOUNT_KUBE=false
 MOUNT_AZURE=false
+MOUNT_GITCONFIG=false
+START_POSTGRES=false
+REBUILD=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
-        --kube)  MOUNT_KUBE=true ;;
-        --azure) MOUNT_AZURE=true ;;
-        *)       DIRS+=("$arg") ;;
+        --kube)      MOUNT_KUBE=true ;;
+        --azure)     MOUNT_AZURE=true ;;
+        --gitconfig) MOUNT_GITCONFIG=true ;;
+        --postgres)  START_POSTGRES=true ;;
+        --rebuild)   REBUILD=true ;;
+        *)           DIRS+=("$arg") ;;
     esac
 done
 
-# Build image if it doesn't exist
-if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-    echo "Image '$IMAGE_NAME' not found. Building..."
+# Build image if it doesn't exist or --rebuild was requested
+if [[ "$REBUILD" == true ]] || ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+    if [[ "$REBUILD" == true ]]; then
+        echo "Rebuilding image '$IMAGE_NAME'..."
+    else
+        echo "Image '$IMAGE_NAME' not found. Building..."
+    fi
     docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/$DOCKERFILE" "$SCRIPT_DIR"
 else
     echo "Image '$IMAGE_NAME' already exists."
@@ -42,15 +56,17 @@ fi
 
 # Bring up sidecar services defined in docker-compose.yml (postgres, etc.)
 # and attach the claude container to the same network (claude-net) so it can
-# reach them by service name. Compose state + named volumes persist across
-# sessions on purpose — the postgres data is meant to be reusable.
+# reach them by service name. Opt-in via --postgres; compose state + named
+# volumes persist across sessions on purpose (postgres data is reusable).
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
 COMPOSE_NETWORK="claude-net"
-if [[ -f "$COMPOSE_FILE" ]]; then
+if [[ "$START_POSTGRES" == true ]]; then
+    if [[ ! -f "$COMPOSE_FILE" ]]; then
+        echo "Error: --postgres requested but $COMPOSE_FILE not found" >&2
+        exit 1
+    fi
     echo "Starting sidecar services from $COMPOSE_FILE..."
     docker compose -f "$COMPOSE_FILE" up -d --wait
-else
-    echo "Warning: $COMPOSE_FILE not found; skipping sidecar services." >&2
 fi
 
 # Default to a fresh throwaway git repo if no directories given, so the
@@ -114,7 +130,7 @@ cleanup() {
     if [[ ${#SESSION_VOLUMES[@]} -gt 0 ]]; then
         echo "  docker volume rm ${SESSION_VOLUMES[*]}"
     fi
-    if [[ -f "$COMPOSE_FILE" ]]; then
+    if [[ "$START_POSTGRES" == true ]]; then
         echo ""
         echo "Sidecar services (postgres, ...) are left running. To stop them:"
         echo "  docker compose -f $COMPOSE_FILE down"
@@ -202,6 +218,27 @@ if [[ "$MOUNT_KUBE" == true ]]; then
     fi
 fi
 
+# --- Gitconfig (opt-in via --gitconfig) ---
+# Volumes become directories, not files, so we can't mount directly at
+# /home/claude/.gitconfig. Instead, drop the file into a volume dir and
+# point git at it via GIT_CONFIG_GLOBAL.
+GITCONFIG_MOUNT_ARGS=()
+GITCONFIG_ENV_ARGS=()
+if [[ "$MOUNT_GITCONFIG" == true ]]; then
+    GITCONFIG_SRC="$HOME/.gitconfig"
+    if [[ -f "$GITCONFIG_SRC" ]]; then
+        GITCONFIG_VOLUME="$(docker volume create)"
+        SESSION_VOLUMES+=("$GITCONFIG_VOLUME")
+        cat "$GITCONFIG_SRC" \
+            | populate_volume_from_tar "$GITCONFIG_VOLUME" \
+                "cat > /dst/gitconfig && chmod 644 /dst/gitconfig"
+        GITCONFIG_MOUNT_ARGS=(-v "$GITCONFIG_VOLUME:/home/claude/.gitconfig.d")
+        GITCONFIG_ENV_ARGS=(-e GIT_CONFIG_GLOBAL=/home/claude/.gitconfig.d/gitconfig)
+    else
+        echo "Warning: Gitconfig '$GITCONFIG_SRC' not found." >&2
+    fi
+fi
+
 # --- Global Claude config dir (settings, hooks, statusline) ---
 # Populated into an anonymous volume rather than bind-mounted so the
 # container can write to ~/.claude (memory, session state, etc.) without
@@ -227,24 +264,22 @@ fi
 
 CLAUDE_CONFIG_MOUNT_ARGS=(-v "$CLAUDE_CONFIG_VOLUME:/home/claude/.claude")
 
-# Attach to the compose-managed network (if compose is in use) so the
-# container can reach 'postgres' by service name. Skip silently if compose
-# isn't set up — falls back to docker's default bridge network.
+# Attach to the compose-managed network and inject PG* env vars so psql /
+# standard postgres client libraries can reach the sidecar by service name.
+# Gated on --postgres; without it, falls back to docker's default bridge
+# network and no postgres env is set.
 NETWORK_ARGS=()
-if docker network inspect "$COMPOSE_NETWORK" >/dev/null 2>&1; then
+POSTGRES_ENV_ARGS=()
+if [[ "$START_POSTGRES" == true ]]; then
     NETWORK_ARGS=(--network "$COMPOSE_NETWORK")
+    POSTGRES_ENV_ARGS=(
+        -e PGHOST=postgres
+        -e PGPORT=5432
+        -e PGUSER=claude
+        -e PGPASSWORD=claude
+        -e PGDATABASE=claude
+    )
 fi
-
-# PG* env vars so psql / standard postgres client libraries connect to the
-# shared sidecar container without any extra config. The 'postgres' hostname
-# resolves on the claude-net docker network.
-POSTGRES_ENV_ARGS=(
-    -e PGHOST=postgres
-    -e PGPORT=5432
-    -e PGUSER=claude
-    -e PGPASSWORD=claude
-    -e PGDATABASE=claude
-)
 
 docker run -it \
     --name "$CONTAINER_NAME" \
@@ -256,9 +291,11 @@ docker run -it \
     --pids-limit=256 \
     -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
     "${POSTGRES_ENV_ARGS[@]}" \
+    "${GITCONFIG_ENV_ARGS[@]}" \
     "${NETWORK_ARGS[@]}" \
     "${AZURE_MOUNT_ARGS[@]}" \
     "${KUBE_MOUNT_ARGS[@]}" \
+    "${GITCONFIG_MOUNT_ARGS[@]}" \
     "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"
