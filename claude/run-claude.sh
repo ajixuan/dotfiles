@@ -283,7 +283,7 @@ fi
 
 docker run -it \
     --name "$CONTAINER_NAME" \
-    --tmpfs /tmp:noexec,nosuid,size=256m \
+    --tmpfs /tmp:noexec,nosuid,size=1g \
     --cap-drop=ALL \
     --security-opt=no-new-privileges \
     --memory=4g \
