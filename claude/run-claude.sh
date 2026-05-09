@@ -7,14 +7,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/claude/project"
 
 usage() {
-    echo "Usage: $0 [--kube] [--azure] [--postgres] [--rebuild] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--bind] [--kube] [--azure] [--postgres] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
-    echo "Each argument must be a git repository. A clone of the repo at HEAD"
-    echo "is copied into a named docker volume and mounted at $WORKDIR/<basename>."
-    echo "Volumes are preserved after exit; extraction commands are printed on"
-    echo "shutdown so you can copy work back to the host."
+    echo "Each argument must be a git repository. By default, a clone of the repo"
+    echo "at HEAD is copied into a named docker volume and mounted at"
+    echo "$WORKDIR/<basename>. Volumes are preserved after exit; extraction"
+    echo "commands are printed on shutdown so you can copy work back to the host."
     echo ""
     echo "Options:"
+    echo "  --bind       Bind-mount each repo directly into the container instead"
+    echo "               of cloning into a volume. Edits inside the container"
+    echo "               affect the host repo immediately; no extraction needed."
+    echo "               May fail under docker userns-remap if container UID"
+    echo "               can't access host files."
     echo "  --kube       Mount kubeconfig into the container"
     echo "  --azure      Mount Azure CLI credentials into the container"
     echo "  --gitconfig  Mount ~/.gitconfig into the container"
@@ -30,9 +35,11 @@ MOUNT_AZURE=false
 MOUNT_GITCONFIG=false
 START_POSTGRES=false
 REBUILD=false
+BIND_MOUNT=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
+        --bind)      BIND_MOUNT=true ;;
         --kube)      MOUNT_KUBE=true ;;
         --azure)     MOUNT_AZURE=true ;;
         --gitconfig) MOUNT_GITCONFIG=true ;;
@@ -109,6 +116,9 @@ CONTAINER_NAME="claude-code-$(date +%s)-$RANDOM"
 SESSION_VOLUMES=()
 # Per-project metadata for cp command generation: "vol<TAB>src<TAB>base".
 PROJECT_VOLUMES=()
+# Bind-mounted projects (no extraction needed — host already sees changes):
+# "src<TAB>base".
+PROJECT_BINDS=()
 cleanup() {
     echo ""
     echo "Session preserved. Container: $CONTAINER_NAME"
@@ -122,6 +132,14 @@ cleanup() {
             echo "  DST=/path/on/host  # change this"
             echo "  mkdir -p \"\$DST\" && docker cp $CONTAINER_NAME:$WORKDIR/$base/. \"\$DST\""
             echo "  sudo chown -R \$(id -u):\$(id -g) \"\$DST\"   # reclaim from userns subuid"
+        done
+    fi
+    if [[ ${#PROJECT_BINDS[@]} -gt 0 ]]; then
+        echo ""
+        echo "Bind-mounted projects (changes are already on host, no extraction needed):"
+        for entry in "${PROJECT_BINDS[@]}"; do
+            IFS=$'\t' read -r src base <<< "$entry"
+            echo "  $base -> $src"
         done
     fi
     echo ""
@@ -154,16 +172,25 @@ populate_volume_from_tar() {
         >/dev/null
 }
 
-# --- Project mounts: git clone -> named docker volume ---
-# For each repo arg, clone it into a throwaway staging directory, copy the
-# clone into a named docker volume via the populate helper, then discard
-# the staging dir.  The volume is mounted at $WORKDIR/<basename> and is
-# PRESERVED after exit so work done inside the container can be recovered
-# (the cleanup trap prints a command to extract it to a host path).
+# --- Project mounts ---
+# Default: clone the repo into a throwaway staging dir, copy into a named
+# docker volume via the populate helper, mount that volume at
+# $WORKDIR/<basename>. Volume is PRESERVED after exit so work can be
+# recovered (cleanup trap prints docker cp commands).
+#
+# With --bind: bind-mount the repo dir directly. Edits inside the container
+# affect the host repo immediately. May fail under userns-remap if the
+# container UID can't access the host files.
 MOUNT_ARGS=()
 for dir in "${DIRS[@]}"; do
     abs_dir="$(cd "$dir" && pwd)"
     base="$(basename "$abs_dir")"
+
+    if [[ "$BIND_MOUNT" == true ]]; then
+        PROJECT_BINDS+=("$abs_dir"$'\t'"$base")
+        MOUNT_ARGS+=(-v "$abs_dir:$WORKDIR/$base")
+        continue
+    fi
 
     stage="$(mktemp -d)"
     git clone --quiet "$abs_dir" "$stage/claude-volume"
@@ -184,6 +211,10 @@ echo "Running container with mounts:"
 for entry in "${PROJECT_VOLUMES[@]}"; do
     IFS=$'\t' read -r vol src base <<< "$entry"
     echo "  $src -> $WORKDIR/$base (volume: $vol)"
+done
+for entry in "${PROJECT_BINDS[@]}"; do
+    IFS=$'\t' read -r src base <<< "$entry"
+    echo "  $src -> $WORKDIR/$base (bind)"
 done
 
 # --- Azure credentials (opt-in via --azure) ---
