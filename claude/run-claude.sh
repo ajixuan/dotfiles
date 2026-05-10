@@ -129,6 +129,11 @@ EOF
 root:x:0:
 claude:x:$CLAUDE_GID:
 EOF
+    # mktemp -d gives mode 700. Under docker userns-remap (or rootless docker)
+    # the container's --user UID is mapped to a host subuid that doesn't own
+    # this dir, so it falls into "other" perms — 700 denies traversal even
+    # though the files are 644. 755 lets the mapped UID through.
+    chmod 755 "$NSS_WRAPPER_DIR"
     chmod 644 "$NSS_WRAPPER_DIR/passwd" "$NSS_WRAPPER_DIR/group"
     NSS_WRAPPER_ARGS=(
         -v "$NSS_WRAPPER_DIR:/etc/nss_wrapper:ro"
