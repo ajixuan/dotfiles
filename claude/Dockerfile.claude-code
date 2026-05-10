@@ -58,11 +58,6 @@ ENV PATH=$GOPATH/bin:$PATH
 
 RUN npm install -g @anthropic-ai/claude-code@latest && npm cache clean --force
 
-ENV CLAUDE_CODE_USE_FOUNDRY=1
-ENV ANTHROPIC_FOUNDRY_RESOURCE=ia-foundry-coding-prod-eus2
-ENV AZURE_TOKEN_CREDENTIALS=dev
-ENV AZURE_CORE_ENCRYPT_TOKEN_CACHE=false
-
 RUN useradd -m -s /bin/bash claude \
     && echo "alias g='git'" >> /home/claude/.bashrc \
     && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/claude/.bashrc \

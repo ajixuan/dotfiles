@@ -360,6 +360,10 @@ docker run -it \
     --cpus=2 \
     --pids-limit=256 \
     -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+    -e CLAUDE_CODE_USE_FOUNDRY=1 \
+    -e ANTHROPIC_FOUNDRY_RESOURCE=ia-foundry-coding-prod-eus2 \
+    -e AZURE_TOKEN_CREDENTIALS=dev \
+    -e AZURE_CORE_ENCRYPT_TOKEN_CACHE=false \
     "${USER_ARGS[@]}" \
     "${NSS_WRAPPER_ARGS[@]}" \
     "${POSTGRES_ENV_ARGS[@]}" \
