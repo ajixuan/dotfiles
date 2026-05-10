@@ -104,7 +104,43 @@ done
 # host path to the container UID (needs sudo, and host files end up owned
 # by that UID), whereas a volume can be populated and chowned from inside a
 # helper container running as root.
-CLAUDE_UID="$(docker run --rm --entrypoint id "$IMAGE_NAME" -u)"
+#
+# With --bind, run the container as the host UID/GID so bind-mounted files
+# round-trip ownership cleanly. The image's claude user record then has the
+# wrong UID for getpwuid, so use libnss-wrapper (LD_PRELOAD) to overlay a
+# passwd/group entry mapping the host UID back to "claude" with
+# HOME=/home/claude. This keeps the shell prompt, $HOME, and any tool that
+# does getpwuid(geteuid()) lookups happy without rebuilding the image per
+# host.
+USER_ARGS=()
+NSS_WRAPPER_ARGS=()
+NSS_WRAPPER_DIR=""
+if [[ "$BIND_MOUNT" == true ]]; then
+    CLAUDE_UID="$(id -u)"
+    CLAUDE_GID="$(id -g)"
+    USER_ARGS=(--user "$CLAUDE_UID:$CLAUDE_GID")
+
+    NSS_WRAPPER_DIR="$(mktemp -d /tmp/claude-nss.XXXXXX)"
+    cat > "$NSS_WRAPPER_DIR/passwd" <<EOF
+root:x:0:0:root:/root:/bin/bash
+claude:x:$CLAUDE_UID:$CLAUDE_GID:Claude:/home/claude:/bin/bash
+EOF
+    cat > "$NSS_WRAPPER_DIR/group" <<EOF
+root:x:0:
+claude:x:$CLAUDE_GID:
+EOF
+    chmod 644 "$NSS_WRAPPER_DIR/passwd" "$NSS_WRAPPER_DIR/group"
+    NSS_WRAPPER_ARGS=(
+        -v "$NSS_WRAPPER_DIR:/etc/nss_wrapper:ro"
+        -e LD_PRELOAD=libnss_wrapper.so
+        -e NSS_WRAPPER_PASSWD=/etc/nss_wrapper/passwd
+        -e NSS_WRAPPER_GROUP=/etc/nss_wrapper/group
+        -e HOME=/home/claude
+    )
+else
+    CLAUDE_UID="$(docker run --rm --entrypoint id "$IMAGE_NAME" -u)"
+    CLAUDE_GID="$CLAUDE_UID"
+fi
 
 # The main container is NOT run with --rm, so after it exits the user can
 # 'docker cp' project files straight out of it. Nothing is cleaned up
@@ -120,6 +156,9 @@ PROJECT_VOLUMES=()
 # "src<TAB>base".
 PROJECT_BINDS=()
 cleanup() {
+    if [[ -n "$NSS_WRAPPER_DIR" ]]; then
+        rm -rf "$NSS_WRAPPER_DIR"
+    fi
     echo ""
     echo "Session preserved. Container: $CONTAINER_NAME"
     if [[ ${#PROJECT_VOLUMES[@]} -gt 0 ]]; then
@@ -321,6 +360,8 @@ docker run -it \
     --cpus=2 \
     --pids-limit=256 \
     -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+    "${USER_ARGS[@]}" \
+    "${NSS_WRAPPER_ARGS[@]}" \
     "${POSTGRES_ENV_ARGS[@]}" \
     "${GITCONFIG_ENV_ARGS[@]}" \
     "${NETWORK_ARGS[@]}" \
