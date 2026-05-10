@@ -49,7 +49,11 @@ for arg in "$@"; do
     esac
 done
 
-# Build image if it doesn't exist or --rebuild was requested
+# Build image if it doesn't exist or --rebuild was requested. The image is
+# UID-agnostic: claude runs as whatever UID useradd picks (typically 1001
+# since node:22-slim already owns 1000). run-claude.sh adapts at runtime by
+# mounting a chowned /home/claude volume for --bind (see below), so the same
+# image works for any host UID without a rebuild.
 if [[ "$REBUILD" == true ]] || ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
     if [[ "$REBUILD" == true ]]; then
         echo "Rebuilding image '$IMAGE_NAME'..."
@@ -99,6 +103,15 @@ for dir in "${DIRS[@]}"; do
 done
 
 
+# All volumes created this run. They're referenced by the exited container
+# and can only be removed after `docker rm $CONTAINER_NAME`.
+SESSION_VOLUMES=()
+# Per-project metadata for cp command generation: "vol<TAB>src<TAB>base".
+PROJECT_VOLUMES=()
+# Bind-mounted projects (no extraction needed — host already sees changes):
+# "src<TAB>base".
+PROJECT_BINDS=()
+
 # Credentials and project sources are copied into docker volumes rather
 # than bind-mounted from the host. A bind-mount would require chowning the
 # host path to the container UID (needs sudo, and host files end up owned
@@ -106,19 +119,32 @@ done
 # helper container running as root.
 #
 # With --bind, run the container as the host UID/GID so bind-mounted files
-# round-trip ownership cleanly. The image's claude user record then has the
-# wrong UID for getpwuid, so use libnss-wrapper (LD_PRELOAD) to overlay a
-# passwd/group entry mapping the host UID back to "claude" with
-# HOME=/home/claude. This keeps the shell prompt, $HOME, and any tool that
-# does getpwuid(geteuid()) lookups happy without rebuilding the image per
-# host.
+# round-trip ownership cleanly. Two adapters then make the rest of the
+# environment work as that arbitrary UID without rebuilding the image:
+#   1. /home/claude is mirrored into a session volume chowned to the host
+#      UID, so claude-code can write ~/.cache, ~/.config, etc. (The image's
+#      /home/claude is owned by the in-image claude UID and would be
+#      read-only to a different running UID.)
+#   2. libnss_wrapper (LD_PRELOAD) overlays /etc/passwd + /etc/group with an
+#      entry mapping the host UID back to "claude" so getpwuid() lookups,
+#      shell prompt, and HOME resolution all agree.
 USER_ARGS=()
+HOME_MOUNT_ARGS=()
 NSS_WRAPPER_ARGS=()
 NSS_WRAPPER_DIR=""
 if [[ "$BIND_MOUNT" == true ]]; then
     CLAUDE_UID="$(id -u)"
     CLAUDE_GID="$(id -g)"
     USER_ARGS=(--user "$CLAUDE_UID:$CLAUDE_GID")
+
+    HOME_VOLUME="$(docker volume create)"
+    SESSION_VOLUMES+=("$HOME_VOLUME")
+    docker run --rm --user 0 --entrypoint sh \
+        -v "$HOME_VOLUME:/dst" \
+        "$IMAGE_NAME" \
+        -c "cp -a /home/claude/. /dst/ && chown -R $CLAUDE_UID:$CLAUDE_GID /dst" \
+        >/dev/null
+    HOME_MOUNT_ARGS=(-v "$HOME_VOLUME:/home/claude")
 
     NSS_WRAPPER_DIR="$(mktemp -d /tmp/claude-nss.XXXXXX)"
     cat > "$NSS_WRAPPER_DIR/passwd" <<EOF
@@ -152,14 +178,6 @@ fi
 # automatically; the cleanup trap prints the extraction + teardown commands.
 CONTAINER_NAME="claude-code-$(date +%s)-$RANDOM"
 
-# All volumes created this run. They're referenced by the exited container
-# and can only be removed after `docker rm $CONTAINER_NAME`.
-SESSION_VOLUMES=()
-# Per-project metadata for cp command generation: "vol<TAB>src<TAB>base".
-PROJECT_VOLUMES=()
-# Bind-mounted projects (no extraction needed — host already sees changes):
-# "src<TAB>base".
-PROJECT_BINDS=()
 cleanup() {
     if [[ -n "$NSS_WRAPPER_DIR" ]]; then
         rm -rf "$NSS_WRAPPER_DIR"
@@ -371,6 +389,7 @@ docker run -it \
     -e AZURE_CORE_ENCRYPT_TOKEN_CACHE=false \
     "${USER_ARGS[@]}" \
     "${NSS_WRAPPER_ARGS[@]}" \
+    "${HOME_MOUNT_ARGS[@]}" \
     "${POSTGRES_ENV_ARGS[@]}" \
     "${GITCONFIG_ENV_ARGS[@]}" \
     "${NETWORK_ARGS[@]}" \
