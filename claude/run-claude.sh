@@ -18,8 +18,7 @@ usage() {
     echo "  --bind       Bind-mount each repo directly into the container instead"
     echo "               of cloning into a volume. Edits inside the container"
     echo "               affect the host repo immediately; no extraction needed."
-    echo "               May fail under docker userns-remap if container UID"
-    echo "               can't access host files."
+    echo "               Uses --userns=host so container UID matches host UID."
     echo "  --kube       Mount kubeconfig into the container"
     echo "  --azure      Mount Azure CLI credentials into the container"
     echo "  --gitconfig  Mount ~/.gitconfig into the container"
@@ -49,11 +48,11 @@ for arg in "$@"; do
     esac
 done
 
-# Build image if it doesn't exist or --rebuild was requested. The image is
-# UID-agnostic: claude runs as whatever UID useradd picks (typically 1001
-# since node:22-slim already owns 1000). run-claude.sh adapts at runtime by
-# mounting a chowned /home/claude volume for --bind (see below), so the same
-# image works for any host UID without a rebuild.
+# Build image if it doesn't exist or --rebuild was requested. The image's
+# in-built claude user is UID 1000 (the node:22-slim base user, renamed).
+# Default flow runs as that user; --bind runs as the host UID via
+# --userns=host. /home/claude is world-writable so any UID can use it as
+# $HOME without a rebuild.
 if [[ "$REBUILD" == true ]] || ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
     if [[ "$REBUILD" == true ]]; then
         echo "Rebuilding image '$IMAGE_NAME'..."
@@ -118,56 +117,37 @@ PROJECT_BINDS=()
 # by that UID), whereas a volume can be populated and chowned from inside a
 # helper container running as root.
 #
-# With --bind, run the container as the host UID/GID so bind-mounted files
-# round-trip ownership cleanly. Two adapters then make the rest of the
-# environment work as that arbitrary UID without rebuilding the image:
-#   1. /home/claude is mirrored into a session volume chowned to the host
-#      UID, so claude-code can write ~/.cache, ~/.config, etc. (The image's
-#      /home/claude is owned by the in-image claude UID and would be
-#      read-only to a different running UID.)
-#   2. libnss_wrapper (LD_PRELOAD) overlays /etc/passwd + /etc/group with an
-#      entry mapping the host UID back to "claude" so getpwuid() lookups,
-#      shell prompt, and HOME resolution all agree.
+# With --bind, the container needs to write to host files as the host UID.
+# Under a daemon with userns-remap enabled, container --user N would get
+# remapped to a host subuid that doesn't own the bind-mounted files, so
+# --userns=host opts this container out of remapping. Combined with
+# --user $(id -u):$(id -g), the in-container UID matches the host UID
+# exactly and bind mounts round-trip ownership cleanly.
+#
+# Caveat: image layers are stored on disk with UIDs remapped through the
+# daemon's userns-remap (image UID 1000 lives on host disk as subuid
+# 101000-ish). Under --userns=host, the container sees those files at
+# their on-disk UID — i.e. not claude. Mirror /home/claude into a fresh
+# volume and chown it to the host UID so the running container sees its
+# home as claude-owned. The helper also runs with --userns=host so its
+# chown writes real host-UID ownership rather than subuid-remapped UIDs.
 USER_ARGS=()
+USERNS_ARGS=()
 HOME_MOUNT_ARGS=()
-NSS_WRAPPER_ARGS=()
-NSS_WRAPPER_DIR=""
 if [[ "$BIND_MOUNT" == true ]]; then
     CLAUDE_UID="$(id -u)"
     CLAUDE_GID="$(id -g)"
     USER_ARGS=(--user "$CLAUDE_UID:$CLAUDE_GID")
+    USERNS_ARGS=(--userns=host)
 
     HOME_VOLUME="$(docker volume create)"
     SESSION_VOLUMES+=("$HOME_VOLUME")
-    docker run --rm --user 0 --entrypoint sh \
+    docker run --rm --user 0 --userns=host --entrypoint sh \
         -v "$HOME_VOLUME:/dst" \
         "$IMAGE_NAME" \
         -c "cp -a /home/claude/. /dst/ && chown -R $CLAUDE_UID:$CLAUDE_GID /dst" \
         >/dev/null
     HOME_MOUNT_ARGS=(-v "$HOME_VOLUME:/home/claude")
-
-    NSS_WRAPPER_DIR="$(mktemp -d /tmp/claude-nss.XXXXXX)"
-    cat > "$NSS_WRAPPER_DIR/passwd" <<EOF
-root:x:0:0:root:/root:/bin/bash
-claude:x:$CLAUDE_UID:$CLAUDE_GID:Claude:/home/claude:/bin/bash
-EOF
-    cat > "$NSS_WRAPPER_DIR/group" <<EOF
-root:x:0:
-claude:x:$CLAUDE_GID:
-EOF
-    # mktemp -d gives mode 700. Under docker userns-remap (or rootless docker)
-    # the container's --user UID is mapped to a host subuid that doesn't own
-    # this dir, so it falls into "other" perms — 700 denies traversal even
-    # though the files are 644. 755 lets the mapped UID through.
-    chmod 755 "$NSS_WRAPPER_DIR"
-    chmod 644 "$NSS_WRAPPER_DIR/passwd" "$NSS_WRAPPER_DIR/group"
-    NSS_WRAPPER_ARGS=(
-        -v "$NSS_WRAPPER_DIR:/etc/nss_wrapper:ro"
-        -e LD_PRELOAD=libnss_wrapper.so
-        -e NSS_WRAPPER_PASSWD=/etc/nss_wrapper/passwd
-        -e NSS_WRAPPER_GROUP=/etc/nss_wrapper/group
-        -e HOME=/home/claude
-    )
 else
     CLAUDE_UID="$(docker run --rm --entrypoint id "$IMAGE_NAME" -u)"
     CLAUDE_GID="$CLAUDE_UID"
@@ -179,9 +159,6 @@ fi
 CONTAINER_NAME="claude-code-$(date +%s)-$RANDOM"
 
 cleanup() {
-    if [[ -n "$NSS_WRAPPER_DIR" ]]; then
-        rm -rf "$NSS_WRAPPER_DIR"
-    fi
     echo ""
     echo "Session preserved. Container: $CONTAINER_NAME"
     if [[ ${#PROJECT_VOLUMES[@]} -gt 0 ]]; then
@@ -227,7 +204,13 @@ trap cleanup EXIT
 # own the files.
 populate_volume_from_tar() {
     local volume="$1" extract_cmd="$2"
+    # Inherit USERNS_ARGS so the chown inside the helper sees the same UID
+    # namespace as the main container. Without this, --bind runs the main
+    # container in host userns but the helper in the daemon's remapped
+    # userns, and chown 1000:1000 in the helper produces files owned by
+    # host subuid 101000 — which the main container then reads as foreign.
     docker run --rm -i --user 0 --entrypoint sh \
+        "${USERNS_ARGS[@]}" \
         -v "$volume:/dst" \
         "$IMAGE_NAME" \
         -c "$extract_cmd && chown -R $CLAUDE_UID:$CLAUDE_UID /dst" \
@@ -241,8 +224,8 @@ populate_volume_from_tar() {
 # recovered (cleanup trap prints docker cp commands).
 #
 # With --bind: bind-mount the repo dir directly. Edits inside the container
-# affect the host repo immediately. May fail under userns-remap if the
-# container UID can't access the host files.
+# affect the host repo immediately. The container runs with --userns=host
+# so the container UID matches the host UID.
 MOUNT_ARGS=()
 for dir in "${DIRS[@]}"; do
     abs_dir="$(cd "$dir" && pwd)"
@@ -388,7 +371,7 @@ docker run -it \
     -e AZURE_TOKEN_CREDENTIALS=dev \
     -e AZURE_CORE_ENCRYPT_TOKEN_CACHE=false \
     "${USER_ARGS[@]}" \
-    "${NSS_WRAPPER_ARGS[@]}" \
+    "${USERNS_ARGS[@]}" \
     "${HOME_MOUNT_ARGS[@]}" \
     "${POSTGRES_ENV_ARGS[@]}" \
     "${GITCONFIG_ENV_ARGS[@]}" \
