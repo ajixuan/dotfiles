@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/claude/project"
 
 usage() {
-    echo "Usage: $0 [--bind] [--kube] [--azure] [--postgres] [--rebuild] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
     echo "Each argument must be a git repository. By default, a clone of the repo"
     echo "at HEAD is copied into a named docker volume and mounted at"
@@ -22,6 +22,11 @@ usage() {
     echo "  --kube       Mount kubeconfig into the container"
     echo "  --azure      Mount Azure CLI credentials into the container"
     echo "  --gitconfig  Mount ~/.gitconfig into the container"
+    echo "  --memory     Persist per-project memory dirs across runs by"
+    echo "               bind-mounting ~/.claude/projects/<slug>/memory/"
+    echo "               from the host. Only memory is shared — settings,"
+    echo "               sessions, agents, plugins stay containerized."
+    echo "               Implies host userns (UID matching)."
     echo "  --postgres   Start the postgres sidecar (docker-compose.yml) and"
     echo "               attach the claude container to the claude-net network"
     echo "  --rebuild    Force rebuild of the claude-code image"
@@ -32,6 +37,7 @@ usage() {
 MOUNT_KUBE=false
 MOUNT_AZURE=false
 MOUNT_GITCONFIG=false
+MOUNT_MEMORY=false
 START_POSTGRES=false
 REBUILD=false
 BIND_MOUNT=false
@@ -42,6 +48,7 @@ for arg in "$@"; do
         --kube)      MOUNT_KUBE=true ;;
         --azure)     MOUNT_AZURE=true ;;
         --gitconfig) MOUNT_GITCONFIG=true ;;
+        --memory)    MOUNT_MEMORY=true ;;
         --postgres)  START_POSTGRES=true ;;
         --rebuild)   REBUILD=true ;;
         *)           DIRS+=("$arg") ;;
@@ -134,7 +141,7 @@ PROJECT_BINDS=()
 USER_ARGS=()
 USERNS_ARGS=()
 HOME_MOUNT_ARGS=()
-if [[ "$BIND_MOUNT" == true ]]; then
+if [[ "$BIND_MOUNT" == true ]] || [[ "$MOUNT_MEMORY" == true ]]; then
     CLAUDE_UID="$(id -u)"
     CLAUDE_GID="$(id -g)"
     USER_ARGS=(--user "$CLAUDE_UID:$CLAUDE_GID")
@@ -340,6 +347,45 @@ fi
 
 CLAUDE_CONFIG_MOUNT_ARGS=(-v "$CLAUDE_CONFIG_VOLUME:/home/claude/.claude")
 
+# --- Per-project memory dirs (opt-in via --memory) ---
+# Bind-mount only ~/.claude/projects/<slug>/memory/ from the host so
+# memory persists across container runs while the rest of ~/.claude stays
+# isolated in the volume above. The slug encodes the container's project
+# path: /home/claude/project/<base> -> -home-claude-project-<base>.
+# Requires host userns + UID matching (set above) so writes round-trip.
+MEMORY_MOUNT_ARGS=()
+if [[ "$MOUNT_MEMORY" == true ]]; then
+    project_entries=()
+    [[ ${#PROJECT_VOLUMES[@]} -gt 0 ]] && project_entries+=("${PROJECT_VOLUMES[@]}")
+    [[ ${#PROJECT_BINDS[@]} -gt 0 ]] && project_entries+=("${PROJECT_BINDS[@]}")
+    mem_parent_paths=()
+    for entry in "${project_entries[@]}"; do
+        # base is the last tab-separated field in both array formats
+        base="${entry##*$'\t'}"
+        slug="-home-claude-project-${base}"
+        host_mem="$HOME/.claude/projects/$slug/memory"
+        mkdir -p "$host_mem"
+        MEMORY_MOUNT_ARGS+=(-v "$host_mem:/home/claude/.claude/projects/$slug/memory")
+        mem_parent_paths+=("projects/$slug/memory")
+    done
+    # Pre-create the parent dirs inside CLAUDE_CONFIG_VOLUME with claude
+    # ownership. Without this, Docker materializes the bind-mount target
+    # by creating projects/ and projects/<slug>/ inside the volume as
+    # root, and the container user can't traverse or write siblings.
+    if [[ ${#mem_parent_paths[@]} -gt 0 ]]; then
+        mkdir_args=()
+        for p in "${mem_parent_paths[@]}"; do
+            mkdir_args+=("/dst/$p")
+        done
+        docker run --rm --user 0 --entrypoint sh \
+            "${USERNS_ARGS[@]}" \
+            -v "$CLAUDE_CONFIG_VOLUME:/dst" \
+            "$IMAGE_NAME" \
+            -c "mkdir -p ${mkdir_args[*]} && chown -R $CLAUDE_UID:$CLAUDE_UID /dst/projects" \
+            >/dev/null
+    fi
+fi
+
 # Attach to the compose-managed network and inject PG* env vars so psql /
 # standard postgres client libraries can reach the sidecar by service name.
 # Gated on --postgres; without it, falls back to docker's default bridge
@@ -380,5 +426,6 @@ docker run -it \
     "${KUBE_MOUNT_ARGS[@]}" \
     "${GITCONFIG_MOUNT_ARGS[@]}" \
     "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \
+    "${MEMORY_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"
