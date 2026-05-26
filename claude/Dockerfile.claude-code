@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bubblewrap \
     socat \
     postgresql-client \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Azure CLI venv from builder
@@ -46,6 +47,12 @@ RUN ln -s /opt/az/bin/az /usr/local/bin/az
 RUN curl -fsSL "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl" \
        -o /usr/local/bin/kubectl \
     && chmod +x /usr/local/bin/kubectl
+
+RUN curl -fsSL "https://github.com/Azure/kubelogin/releases/latest/download/kubelogin-linux-$(dpkg --print-architecture).zip" \
+       -o /tmp/kubelogin.zip \
+    && unzip -j /tmp/kubelogin.zip "bin/linux_$(dpkg --print-architecture)/kubelogin" -d /usr/local/bin \
+    && chmod +x /usr/local/bin/kubelogin \
+    && rm /tmp/kubelogin.zip
 
 RUN curl -fsSL "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crank" \
        -o /usr/local/bin/crossplane \
