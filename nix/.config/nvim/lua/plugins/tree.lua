@@ -5,13 +5,6 @@ return {
     keys = {
       { "<Tab>", "<cmd>NvimTreeFindFile<cr>", desc = "Find file in tree" },
       {
-        "<CR>",
-        function()
-          require("nvim-tree.api").tree.toggle({ find_file = true, focus = true })
-        end,
-        desc = "Toggle tree (reveal current file)",
-      },
-      {
         "<leader><CR>",
         function()
           require("nvim-tree.api").tree.toggle({ find_file = true, focus = true })
