@@ -2,16 +2,7 @@ return {
   {
     'nvim-tree/nvim-tree.lua', version = "*", lazy = false,
     dependencies = { "nvim-tree/nvim-web-devicons" },
-    keys = {
-      { "<Tab>", "<cmd>NvimTreeFindFile<cr>", desc = "Find file in tree" },
-      {
-        "<leader><CR>",
-        function()
-          require("nvim-tree.api").tree.toggle({ find_file = true, focus = true })
-        end,
-        desc = "Toggle tree (reveal current file)",
-      },
-    },
+    keys = {},
     config = function()
       require("nvim-tree").setup {
         view = {
