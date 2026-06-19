@@ -2,27 +2,7 @@ return {
   {
     "neovim/nvim-lspconfig", -- REQUIRED: for native Neovim LSP integration
     lazy = false, -- REQUIRED: tell lazy.nvim to start this plugin at startup
-    dependencies = {
-      -- main one
-      { "ms-jpq/coq_nvim", branch = "coq" },
-
-      -- 9000+ Snippets
-      { "ms-jpq/coq.artifacts", branch = "artifacts" },
-
-      -- lua & third party sources -- See https://github.com/ms-jpq/coq.thirdparty
-      -- Need to **configure separately**
-      { 'ms-jpq/coq.thirdparty', branch = "3p" }
-    },
     init = function()
-
-      vim.g.coq_settings = {
-          -- start coq at startup
-          auto_start = 'shut-up',
-          keymap = {
-            jump_to_mark = '',
-          }
-      }
-
       local on_attach = function(client, bufnr)
         -- Mappings
         local map = vim.keymap.set

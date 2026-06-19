@@ -8,6 +8,7 @@ static="${STATIC:-true}"
 build_base_dir="${BUILD_DIR:-${HOME}/local_builds}"
 build_list=()
 export_path=false
+enable_build_tools=false
 job_count=4
 
 # Colors
@@ -28,6 +29,7 @@ passing in the -i flag all packages will be installed to the system directory
 build.sh [-h] [-p rust,rigrep,tmux,nvim,fzf,alacritty]
   -h                     print help message
   -i                     update PATH to build_dir/bin
+  -o                     build tools
   -p PACKAGE             comma separated list of package to install
   -b BUILD_DIR           build packages to BUILD_DIR directory (${HOME}/tmp/usr/local)
   -d DEPENDENCIES_DIR    build depenednecies to DEPENDENCIES_DIR (${HOME}/tmp/usr/local)
@@ -46,6 +48,7 @@ while getopts ":hip:b:d:r:c:t:" opt; do
     i) export_path=true ;;
     p) build_list=(${OPTARG//,/ }) ;;
     t) job_count="${OPTARG}"       ;;
+    o) enable_build_tools=true ;;
     b)
       echo "setting build_dir to ${OPTARG}"
       build_base_dir="${OPTARG}"
@@ -423,7 +426,9 @@ fi
 [[ "${build_list[@]}" =~ fzf ]]  && install_fzf
 [[ "${build_list[@]}" =~ rust ]] && install_rust
 if [[ "${build_list[@]}" =~ ripgrep|tmux|nvim|alacritty ]]; then
-  build_tools
+  if $enable_build_tools ; then
+    build_tools
+  fi
   [[ "${build_list[@]}" =~ ripgrep ]] && build_ripgrep
   [[ "${build_list[@]}" =~ tmux ]] && build_tmux
   [[ "${build_list[@]}" =~ nvim ]] && build_nvim
