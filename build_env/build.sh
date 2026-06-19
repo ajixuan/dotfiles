@@ -42,7 +42,7 @@ EOF
   exit 0
 }
 
-while getopts ":hip:b:d:r:c:t:" opt; do
+while getopts ":hiop:b:d:r:c:t:" opt; do
   case ${opt} in
     h) usage ;;
     i) export_path=true ;;
