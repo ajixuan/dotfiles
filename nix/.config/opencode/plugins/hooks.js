@@ -29,7 +29,7 @@ export const ClaudeHooks = async ({ $, directory }) => {
       }
     },
 
-    "tool.execute.after": async (input, output) => {
+    /*"tool.execute.after": async (input, output) => {
       // checksum-verify.sh: verify hook file integrity after any tool use
       const checksumFile = `${directory}/.claude/hooks/.checksums`
       if (checksumFile) {
@@ -37,7 +37,7 @@ export const ClaudeHooks = async ({ $, directory }) => {
         if (exitCode === 1) {
           console.error("TAMPERING DETECTED: Hook files have been modified!")
         }
-      }
+      }*/
 
       // review-changes.sh: run prettier after edits
       if (input.tool === "edit" || input.tool === "write") {

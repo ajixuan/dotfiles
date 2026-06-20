@@ -281,6 +281,12 @@ build_tools(){
     # can resolve the file during import.
     cp "${download_dir}/gettext/gettext-tools/gnulib-m4/wchar_t.m4" \
        "${GNULIB_SRCDIR}/m4/wchar_t.m4"
+
+    # Remove gnulib-local patches for files that no longer exist in the
+    # latest gnulib (error.h, hash.c, hash.h, obstack.h were removed
+    # upstream), so gnulib-tool doesn't fail trying to apply them.
+    find "${download_dir}/gettext/gnulib-local" -name '*.diff' \
+      -exec sh -c 'base="${1%.diff}"; f="$1"; gnulib_file="${GNULIB_SRCDIR}/${base#*/}"; [ -f "$gnulib_file" ] || mv "$f" "${f}.DELETE"' _ {} \;
     std_build 'gettext' "${deps_build_dir}"
   fi
 
