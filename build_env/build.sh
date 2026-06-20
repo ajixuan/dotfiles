@@ -267,7 +267,7 @@ build_tools(){
   #fi
 
   # build gettext
-  if ! [ -f "${build_dir}/bin/gettextize" ] ; then
+  if ! [ -f "${deps_build_dir}/bin/gettextize" ] ; then
     printf "${GREEN}building gettext${NC}\n"
     curls "${gettext_url}" "gettext.tar.gz"
     std_build 'gettext' "${deps_build_dir}"
@@ -281,32 +281,32 @@ build_tools(){
   fi
 
   # build unzip
-  if ! [ -f "${build_dir}/bin/unzip" ] ; then
+  if ! [ -f "${deps_build_dir}/bin/unzip" ] ; then
     printf "${GREEN}Building unzip${NC}\n"
     git_cl "${unzip_url}" "${download_dir}/unzip"
     cmake_build 'unzip' "${deps_build_dir}"
   fi
 
   # build freetype
-  if ! [ -f "${build_dir}/lib/libfreetype.so" ]; then
+  if ! [ -f "${deps_build_dir}/lib/libfreetype.so" ]; then
     printf "${GREEN}Building freetype2${NC}\n"
     curls "${freetype_url}" "freetype.tar.gz"
     std_build 'freetype' "${deps_build_dir}"
   fi
 
-  if ! ls ${build_dir}/lib/libexpat.so* ; then
+  if ! ls ${deps_build_dir}/lib/libexpat.so* ; then
     printf "${GREEN}Building expat${NC}\n"
     curls "${expat_url}" "expat.tar.gz"
     cmake_build 'expat' "${deps_build_dir}"
   fi
 
-  if ! [ -f "${build_dir}/bin/gperf" ]; then
+  if ! [ -f "${deps_build_dir}/bin/gperf" ]; then
     printf "${GREEN}Building gperf${NC}\n"
     curls "${gperf_url}" "gperf.tar.gz"
     std_build 'gperf' "${deps_build_dir}"
   fi
 
-  if ! [ -d "${build_dir}/share/fontconfig" ]; then
+  if ! [ -d "${deps_build_dir}/share/fontconfig" ]; then
     printf "${GREEN}Building fontconfig${NC}\n"
     curls "${fontconfig_url}" "fontconfig.tar.gz"
     std_build 'fontconfig' "${deps_build_dir}"
