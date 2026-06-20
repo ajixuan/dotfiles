@@ -358,7 +358,7 @@ SESSION_VOLUMES+=("$OPENCODE_CONFIG_VOLUME")
 
 OPENCODE_DIR="$SCRIPT_DIR/opencode"
 if [[ -d "$OPENCODE_DIR" ]] && [[ -n "$(ls -A "$OPENCODE_DIR" 2>/dev/null)" ]]; then
-    tar -C "$OPENCODE_DIR" -cf - . \
+    tar -C "$OPENCODE_DIR" -chf - . \
         | populate_volume_from_tar "$OPENCODE_CONFIG_VOLUME" \
             "tar -xf - -C /dst"
 fi

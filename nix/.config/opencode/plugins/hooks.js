@@ -22,23 +22,11 @@ export const ClaudeHooks = async ({ $, directory }) => {
           if (/\.claude\/(hooks|settings)/.test(filePath)) {
             throw new Error("Editing hooks and settings files is blocked.")
           }
-          //if (/\.opencode\/plugins\//.test(filePath) && !/hooks\.js$/.test(filePath)) {
-          //  throw new Error("Editing other plugin files is blocked.")
-          //}
         }
       }
     },
 
-    /*"tool.execute.after": async (input, output) => {
-      // checksum-verify.sh: verify hook file integrity after any tool use
-      const checksumFile = `${directory}/.claude/hooks/.checksums`
-      if (checksumFile) {
-        const { exitCode } = await $`sha256sum --check ${checksumFile} --quiet 2>/dev/null`.nothrow()
-        if (exitCode === 1) {
-          console.error("TAMPERING DETECTED: Hook files have been modified!")
-        }
-      }*/
-
+    "tool.execute.after": async (input, output) => {
       // review-changes.sh: run prettier after edits
       if (input.tool === "edit" || input.tool === "write") {
         const filePath = output.args.filePath
