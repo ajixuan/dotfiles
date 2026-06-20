@@ -312,7 +312,7 @@ build_tools(){
   if ! [ -f "${deps_build_dir}/bin/unzip" ] ; then
     printf "${GREEN}Building unzip${NC}\n"
     git_cl "${unzip_url}" "${download_dir}/unzip"
-    cmake_build 'unzip' "${deps_build_dir}"
+    CONFIG_FLAGS="-DCMAKE_POLICY_VERSION_MINIMUM=3.5" cmake_build 'unzip' "${deps_build_dir}"
   fi
 
   # build freetype
