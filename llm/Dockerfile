@@ -1,4 +1,12 @@
 # ---- stage 1: build azure-cli into a self-contained venv ----
+FROM node:22-slim AS libucontext-builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates gcc git libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 https://github.com/kaniini/libucontext.git /tmp/libucontext \
+    && make -C /tmp/libucontext ARCH=$(uname -m) \
+    && make -C /tmp/libucontext ARCH=$(uname -m) DESTDIR=/tmp/install install
+
 FROM node:22-slim AS az-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -40,6 +48,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# OpenTUI render library needs getcontext (removed in glibc 2.34+).
+# Copy libucontext built in the builder stage above.
+COPY --from=libucontext-builder /tmp/install/lib/libucontext.so.1 /usr/lib/libucontext.so.1
+
 # Azure CLI venv from builder
 COPY --from=az-builder /opt/az /opt/az
 RUN ln -s /opt/az/bin/az /usr/local/bin/az
@@ -79,6 +91,7 @@ RUN groupmod -n claude node \
     && echo "alias g='git'" >> /home/claude/.bashrc \
     && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/claude/.bashrc \
     && echo "alias ocode='opencode'" >> /home/claude/.bashrc \
+    && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/claude/.bashrc \
     && chown claude:claude /home/claude/.bashrc \
     && chmod -R a+rwX /home/claude
 USER claude
