@@ -270,6 +270,10 @@ build_tools(){
   if ! [ -f "${deps_build_dir}/bin/gettextize" ] ; then
     printf "${GREEN}building gettext${NC}\n"
     curls "${gettext_url}" "gettext.tar.gz"
+    export GNULIB_SRCDIR="${download_dir}/gnulib"
+    if [ ! -d "${GNULIB_SRCDIR}" ]; then
+      git clone --depth 1 https://git.savannah.gnu.org/git/gnulib.git "${GNULIB_SRCDIR}"
+    fi
     std_build 'gettext' "${deps_build_dir}"
   fi
 
