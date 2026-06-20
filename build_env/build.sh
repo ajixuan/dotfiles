@@ -156,7 +156,7 @@ function cmake_build {
 
   pushd .
   cd "${download_dir}/${_pkg_name}"
-  cmake  "${_extra_config_flags[@]}" -DCMAKE_INSTALL_PREFIX=${_build_dir} ./
+  cmake  "${_extra_config_flags[@]}" -DCMAKE_INSTALL_PREFIX=${_build_dir} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ./
   make -j${job_count} "${_extra_make_install_flags[@]}" install
   unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
   popd
@@ -312,7 +312,7 @@ build_tools(){
   if ! [ -f "${deps_build_dir}/bin/unzip" ] ; then
     printf "${GREEN}Building unzip${NC}\n"
     git_cl "${unzip_url}" "${download_dir}/unzip"
-    CONFIG_FLAGS="-DCMAKE_POLICY_VERSION_MINIMUM=3.5" cmake_build 'unzip' "${deps_build_dir}"
+    cmake_build 'unzip' "${deps_build_dir}"
   fi
 
   # build freetype
