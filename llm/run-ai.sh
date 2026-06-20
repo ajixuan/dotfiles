@@ -2,7 +2,7 @@
 set -euo pipefail
 
 IMAGE_NAME="claude-code"
-DOCKERFILE="Dockerfile.claude-code"
+DOCKERFILE="Dockerfile"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/claude/project"
 

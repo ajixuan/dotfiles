@@ -66,7 +66,7 @@ RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-$(dpkg --print-architect
 ENV GOPATH=/home/claude/go
 ENV PATH=$GOPATH/bin:$PATH
 
-RUN npm install -g @anthropic-ai/claude-code@latest && npm install -g opencode && npm cache clean --force
+RUN npm install -g @anthropic-ai/claude-code@latest && npm install -g opencode-ai && npm cache clean --force
 
 # Rename the base image's node user (UID 1000) to claude rather than adding
 # a new claude user. With --userns=host (see run-claude.sh --bind), the host

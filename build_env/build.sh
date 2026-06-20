@@ -259,12 +259,6 @@ build_tools(){
     std_build 'libtool' "${deps_build_dir}"
   fi
 
-  # build m4
-  # I give up trying to build m4
-  #if ! [ -f "${deps_build_dir}/bin/m4" ] ; then
-  #  curls "${m4_url}" "m4.tar.gz"
-  #  std_build 'm4' "${deps_build_dir}"
-  #fi
 
   # build gettext
   if ! [ -f "${deps_build_dir}/bin/gettextize" ] ; then
@@ -274,6 +268,13 @@ build_tools(){
     if [ ! -d "${GNULIB_SRCDIR}" ]; then
       git clone --depth 1 https://git.savannah.gnu.org/git/gnulib.git "${GNULIB_SRCDIR}"
     fi
+
+    # Patch all configure.ac files so gnulib-tool.py (which requires
+    # autoconf >= 2.64) doesn't reject gettext's outdated AC_PREREQ
+    untar 'gettext'
+    find "${download_dir}/gettext" -name configure.ac \
+      -exec grep -q '^AC_PREREQ' {} \; \
+      -exec sed -i 's/^AC_PREREQ(\[.*\])/AC_PREREQ([2.64])/' {} \;
     std_build 'gettext' "${deps_build_dir}"
   fi
 
