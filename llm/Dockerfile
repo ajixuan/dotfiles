@@ -1,7 +1,7 @@
 # ---- stage 1: build azure-cli into a self-contained venv ----
 FROM node:22-slim AS libucontext-builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates gcc git libc6-dev \
+    build-essential ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 https://github.com/kaniini/libucontext.git /tmp/libucontext \
     && make -C /tmp/libucontext ARCH=$(uname -m) \
