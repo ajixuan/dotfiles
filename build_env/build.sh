@@ -275,6 +275,12 @@ build_tools(){
     find "${download_dir}/gettext" -name configure.ac \
       -exec grep -q '^AC_PREREQ' {} \; \
       -exec sed -i 's/^AC_PREREQ(\[.*\])/AC_PREREQ([2.64])/' {} \;
+
+    # gnulib removed m4/wchar_t.m4, but gettext's gnulib-comp.m4 still
+    # references it. Restore it from gettext's own copy so gnulib-tool
+    # can resolve the file during import.
+    cp "${download_dir}/gettext/gettext-tools/gnulib-m4/wchar_t.m4" \
+       "${GNULIB_SRCDIR}/m4/wchar_t.m4"
     std_build 'gettext' "${deps_build_dir}"
   fi
 
