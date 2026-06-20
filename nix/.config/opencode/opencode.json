@@ -39,12 +39,6 @@
     "grep": "allow",
     "edit": "allow",
     "websearch": "allow",
-    "webfetch": {
-      "*marketplace.upbound.io*": "allow",
-      "*docs.crossplane.io*": "allow",
-      "*raw.githubusercontent.com*": "allow",
-      "*github.com*": "allow"
-    },
     "bash": {
       "*": "ask",
       "tmux list-panes*": "allow",
