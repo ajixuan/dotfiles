@@ -66,7 +66,7 @@ RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-$(dpkg --print-architect
 ENV GOPATH=/home/claude/go
 ENV PATH=$GOPATH/bin:$PATH
 
-RUN npm install -g @anthropic-ai/claude-code@latest && npm cache clean --force
+RUN npm install -g @anthropic-ai/claude-code@latest && npm install -g opencode && npm cache clean --force
 
 # Rename the base image's node user (UID 1000) to claude rather than adding
 # a new claude user. With --userns=host (see run-claude.sh --bind), the host
@@ -78,6 +78,7 @@ RUN groupmod -n claude node \
     && usermod -l claude -d /home/claude -m node \
     && echo "alias g='git'" >> /home/claude/.bashrc \
     && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/claude/.bashrc \
+    && echo "alias ocode='opencode'" >> /home/claude/.bashrc \
     && chown claude:claude /home/claude/.bashrc \
     && chmod -R a+rwX /home/claude
 USER claude
