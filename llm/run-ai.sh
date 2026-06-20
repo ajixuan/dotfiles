@@ -220,7 +220,7 @@ populate_volume_from_tar() {
         "${USERNS_ARGS[@]}" \
         -v "$volume:/dst" \
         "$IMAGE_NAME" \
-        -c "$extract_cmd && chown -R $SKIP_UID:$_UID /dst" \
+        -c "$extract_cmd && chown -R $SKIP_UID:$SKIP_UID /dst" \
         >/dev/null
 }
 
