@@ -332,8 +332,9 @@ CLAUDE_CONFIG_MOUNT_ARGS=()
 CLAUDE_CONFIG_VOLUME="$(docker volume create)"
 SESSION_VOLUMES+=("$CLAUDE_CONFIG_VOLUME")
 
-if [[ -f "$HOME/.claude/settings.json" ]]; then
-    tar -C "$HOME/.claude" -cf - settings.json \
+CLAUDE_SETTINGS_DIR="$SCRIPT_DIR/claude"
+if [[ -d "$CLAUDE_SETTINGS_DIR" ]] && [[ -n "$(ls -A "$CLAUDE_SETTINGS_DIR" 2>/dev/null)" ]]; then
+    tar -C "$CLAUDE_SETTINGS_DIR" -cf - . \
         | populate_volume_from_tar "$CLAUDE_CONFIG_VOLUME" \
             "tar -xf - -C /dst"
 fi
@@ -346,6 +347,23 @@ if [[ -d "$GLOBAL_DIR" ]] && [[ -n "$(ls -A "$GLOBAL_DIR" 2>/dev/null)" ]]; then
 fi
 
 CLAUDE_CONFIG_MOUNT_ARGS=(-v "$CLAUDE_CONFIG_VOLUME:/home/claude/.claude")
+
+
+# --- OpenCode global config dir ---
+# Mounts the opencode config and plugins from the dotfiles into
+# ~/.config/opencode so opencode can find them inside the container.
+OPENCODE_CONFIG_MOUNT_ARGS=()
+OPENCODE_CONFIG_VOLUME="$(docker volume create)"
+SESSION_VOLUMES+=("$OPENCODE_CONFIG_VOLUME")
+
+OPENCODE_DIR="$SCRIPT_DIR/opencode"
+if [[ -d "$OPENCODE_DIR" ]] && [[ -n "$(ls -A "$OPENCODE_DIR" 2>/dev/null)" ]]; then
+    tar -C "$OPENCODE_DIR" -cf - . \
+        | populate_volume_from_tar "$OPENCODE_CONFIG_VOLUME" \
+            "tar -xf - -C /dst"
+fi
+
+OPENCODE_CONFIG_MOUNT_ARGS=(-v "$OPENCODE_CONFIG_VOLUME:/home/claude/.config/opencode")
 
 # --- Per-project memory dirs (opt-in via --memory) ---
 # Bind-mount only ~/.claude/projects/<slug>/memory/ from the host so
@@ -426,6 +444,7 @@ docker run -it \
     "${KUBE_MOUNT_ARGS[@]}" \
     "${GITCONFIG_MOUNT_ARGS[@]}" \
     "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \
+    "${OPENCODE_CONFIG_MOUNT_ARGS[@]}" \
     "${MEMORY_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"
