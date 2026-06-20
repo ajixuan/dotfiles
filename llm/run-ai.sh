@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_NAME="claude-code"
+IMAGE_NAME="skip-code"
 DOCKERFILE="Dockerfile"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKDIR="/home/claude/project"
+WORKDIR="/home/skip/project"
 
 usage() {
     echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--rebuild] <repo1> [repo2] [repo3] ..."
@@ -23,13 +23,13 @@ usage() {
     echo "  --azure      Mount Azure CLI credentials into the container"
     echo "  --gitconfig  Mount ~/.gitconfig into the container"
     echo "  --memory     Persist per-project memory dirs across runs by"
-    echo "               bind-mounting ~/.claude/projects/<slug>/memory/"
+    echo "               bind-mounting ~/.skip/projects/<slug>/memory/"
     echo "               from the host. Only memory is shared — settings,"
     echo "               sessions, agents, plugins stay containerized."
     echo "               Implies host userns (UID matching)."
     echo "  --postgres   Start the postgres sidecar (docker-compose.yml) and"
-    echo "               attach the claude container to the claude-net network"
-    echo "  --rebuild    Force rebuild of the claude-code image"
+    echo "               attach the skip container to the skip-net network"
+    echo "  --rebuild    Force rebuild of the skip-code image"
     exit 1
 }
 
@@ -56,9 +56,9 @@ for arg in "$@"; do
 done
 
 # Build image if it doesn't exist or --rebuild was requested. The image's
-# in-built claude user is UID 1000 (the node:22-slim base user, renamed).
+# in-built skip user is UID 1000 (the node:22-slim base user, renamed).
 # Default flow runs as that user; --bind runs as the host UID via
-# --userns=host. /home/claude is world-writable so any UID can use it as
+# --userns=host. /home/skip is world-writable so any UID can use it as
 # $HOME without a rebuild.
 if [[ "$REBUILD" == true ]] || ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
     if [[ "$REBUILD" == true ]]; then
@@ -72,11 +72,11 @@ else
 fi
 
 # Bring up sidecar services defined in docker-compose.yml (postgres, etc.)
-# and attach the claude container to the same network (claude-net) so it can
+# and attach the skip container to the same network (skip-net) so it can
 # reach them by service name. Opt-in via --postgres; compose state + named
 # volumes persist across sessions on purpose (postgres data is reusable).
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
-COMPOSE_NETWORK="claude-net"
+COMPOSE_NETWORK="skip-net"
 if [[ "$START_POSTGRES" == true ]]; then
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: --postgres requested but $COMPOSE_FILE not found" >&2
@@ -89,7 +89,7 @@ fi
 # Default to a fresh throwaway git repo if no directories given, so the
 # worktree pipeline below has something to operate on.
 if [[ ${#DIRS[@]} -lt 1 ]]; then
-    tmpdir="$(mktemp -d /tmp/claude-scratch-XXXXXX)"
+    tmpdir="$(mktemp -d /tmp/skip-scratch-XXXXXX)"
     git -C "$tmpdir" init -q
     git -C "$tmpdir" commit -q --allow-empty -m "init"
     echo "No directories specified. Using $tmpdir"
@@ -134,17 +134,17 @@ PROJECT_BINDS=()
 # Caveat: image layers are stored on disk with UIDs remapped through the
 # daemon's userns-remap (image UID 1000 lives on host disk as subuid
 # 101000-ish). Under --userns=host, the container sees those files at
-# their on-disk UID — i.e. not claude. Mirror /home/claude into a fresh
+# their on-disk UID — i.e. not skip. Mirror /home/skip into a fresh
 # volume and chown it to the host UID so the running container sees its
-# home as claude-owned. The helper also runs with --userns=host so its
+# home as skip-owned. The helper also runs with --userns=host so its
 # chown writes real host-UID ownership rather than subuid-remapped UIDs.
 USER_ARGS=()
 USERNS_ARGS=()
 HOME_MOUNT_ARGS=()
 if [[ "$BIND_MOUNT" == true ]] || [[ "$MOUNT_MEMORY" == true ]]; then
-    CLAUDE_UID="$(id -u)"
-    CLAUDE_GID="$(id -g)"
-    USER_ARGS=(--user "$CLAUDE_UID:$CLAUDE_GID")
+    SKIP_UID="$(id -u)"
+    SKIP_GID="$(id -g)"
+    USER_ARGS=(--user "$SKIP_UID:$SKIP_GID")
     USERNS_ARGS=(--userns=host)
 
     HOME_VOLUME="$(docker volume create)"
@@ -152,18 +152,18 @@ if [[ "$BIND_MOUNT" == true ]] || [[ "$MOUNT_MEMORY" == true ]]; then
     docker run --rm --user 0 --userns=host --entrypoint sh \
         -v "$HOME_VOLUME:/dst" \
         "$IMAGE_NAME" \
-        -c "cp -a /home/claude/. /dst/ && chown -R $CLAUDE_UID:$CLAUDE_GID /dst" \
+        -c "cp -a /home/skip/. /dst/ && chown -R $SKIP_UID:$SKIP_GID /dst" \
         >/dev/null
-    HOME_MOUNT_ARGS=(-v "$HOME_VOLUME:/home/claude")
+    HOME_MOUNT_ARGS=(-v "$HOME_VOLUME:/home/skip")
 else
-    CLAUDE_UID="$(docker run --rm --entrypoint id "$IMAGE_NAME" -u)"
-    CLAUDE_GID="$CLAUDE_UID"
+    SKIP_UID="$(docker run --rm --entrypoint id "$IMAGE_NAME" -u)"
+    SKIP_GID="$SKIP_UID"
 fi
 
 # The main container is NOT run with --rm, so after it exits the user can
 # 'docker cp' project files straight out of it. Nothing is cleaned up
 # automatically; the cleanup trap prints the extraction + teardown commands.
-CONTAINER_NAME="claude-code-$(date +%s)-$RANDOM"
+CONTAINER_NAME="skip-code-$(date +%s)-$RANDOM"
 
 cleanup() {
     echo ""
@@ -220,7 +220,7 @@ populate_volume_from_tar() {
         "${USERNS_ARGS[@]}" \
         -v "$volume:/dst" \
         "$IMAGE_NAME" \
-        -c "$extract_cmd && chown -R $CLAUDE_UID:$CLAUDE_UID /dst" \
+        -c "$extract_cmd && chown -R $SKIP_UID:$_UID /dst" \
         >/dev/null
 }
 
@@ -245,13 +245,13 @@ for dir in "${DIRS[@]}"; do
     fi
 
     stage="$(mktemp -d)"
-    git clone --quiet "$abs_dir" "$stage/claude-volume"
+    git clone --quiet "$abs_dir" "$stage/skip-volume"
 
     # Sanitize base for docker volume naming (alphanumeric, ., -, _ only)
     safe_base="$(printf '%s' "$base" | tr -c '[:alnum:]._-' '_')"
-    vol_name="claude-proj-${safe_base}-$(date +%s)-$RANDOM"
+    vol_name="skip-proj-${safe_base}-$(date +%s)-$RANDOM"
     docker volume create "$vol_name" >/dev/null
-    tar -C "$stage/claude-volume" -cf - . \
+    tar -C "$stage/skip-volume" -cf - . \
         | populate_volume_from_tar "$vol_name" "tar -xf - -C /dst"
     rm -rf "$stage"
 
@@ -279,7 +279,7 @@ if [[ "$MOUNT_AZURE" == true ]]; then
         tar -C "$AZURE_DIR" -cf - . \
             | populate_volume_from_tar "$AZURE_VOLUME" \
                 "tar -xf - -C /dst && chmod -R u+rwX,go-rwx /dst"
-        AZURE_MOUNT_ARGS=(-v "$AZURE_VOLUME:/home/claude/.azure")
+        AZURE_MOUNT_ARGS=(-v "$AZURE_VOLUME:/home/skip/.azure")
     else
         echo "Warning: Azure config dir '$AZURE_DIR' not found. Azure auth may fail." >&2
     fi
@@ -295,7 +295,7 @@ if [[ "$MOUNT_KUBE" == true ]]; then
         cat "$KUBECONFIG_SRC" \
             | populate_volume_from_tar "$KUBE_VOLUME" \
                 "cat > /dst/infra-config && chmod 600 /dst/infra-config"
-        KUBE_MOUNT_ARGS=(-v "$KUBE_VOLUME:/home/claude/.kube")
+        KUBE_MOUNT_ARGS=(-v "$KUBE_VOLUME:/home/skip/.kube")
     else
         echo "Warning: Kubeconfig '$KUBECONFIG_SRC' not found. kubectl may not work." >&2
     fi
@@ -303,7 +303,7 @@ fi
 
 # --- Gitconfig (opt-in via --gitconfig) ---
 # Volumes become directories, not files, so we can't mount directly at
-# /home/claude/.gitconfig. Instead, drop the file into a volume dir and
+# /home/skip/.gitconfig. Instead, drop the file into a volume dir and
 # point git at it via GIT_CONFIG_GLOBAL.
 GITCONFIG_MOUNT_ARGS=()
 GITCONFIG_ENV_ARGS=()
@@ -315,38 +315,38 @@ if [[ "$MOUNT_GITCONFIG" == true ]]; then
         cat "$GITCONFIG_SRC" \
             | populate_volume_from_tar "$GITCONFIG_VOLUME" \
                 "cat > /dst/gitconfig && chmod 644 /dst/gitconfig"
-        GITCONFIG_MOUNT_ARGS=(-v "$GITCONFIG_VOLUME:/home/claude/.gitconfig.d")
-        GITCONFIG_ENV_ARGS=(-e GIT_CONFIG_GLOBAL=/home/claude/.gitconfig.d/gitconfig)
+        GITCONFIG_MOUNT_ARGS=(-v "$GITCONFIG_VOLUME:/home/skip/.gitconfig.d")
+        GITCONFIG_ENV_ARGS=(-e GIT_CONFIG_GLOBAL=/home/skip/.gitconfig.d/gitconfig)
     else
         echo "Warning: Gitconfig '$GITCONFIG_SRC' not found." >&2
     fi
 fi
 
-# --- Global Claude config dir (settings, hooks, statusline) ---
+# --- Global skip config dir (settings, hooks, statusline) ---
 # Populated into an anonymous volume rather than bind-mounted so the
-# container can write to ~/.claude (memory, session state, etc.) without
+# container can write to ~/.skip (memory, session state, etc.) without
 # touching the host and without hitting userns-remap permission issues.
 # Listed in SESSION_VOLUMES so the cleanup message includes it in the
 # 'docker volume rm' line the user runs when tearing the session down.
-CLAUDE_CONFIG_MOUNT_ARGS=()
-CLAUDE_CONFIG_VOLUME="$(docker volume create)"
-SESSION_VOLUMES+=("$CLAUDE_CONFIG_VOLUME")
+SKIP_CONFIG_MOUNT_ARGS=()
+SKIP_CONFIG_VOLUME="$(docker volume create)"
+SESSION_VOLUMES+=("$SKIP_CONFIG_VOLUME")
 
-CLAUDE_SETTINGS_DIR="$SCRIPT_DIR/claude"
-if [[ -d "$CLAUDE_SETTINGS_DIR" ]] && [[ -n "$(ls -A "$CLAUDE_SETTINGS_DIR" 2>/dev/null)" ]]; then
-    tar -C "$CLAUDE_SETTINGS_DIR" -cf - . \
-        | populate_volume_from_tar "$CLAUDE_CONFIG_VOLUME" \
+SKIP_SETTINGS_DIR="$SCRIPT_DIR/skip"
+if [[ -d "$SKIP_SETTINGS_DIR" ]] && [[ -n "$(ls -A "$SKIP_SETTINGS_DIR" 2>/dev/null)" ]]; then
+    tar -C "$SKIP_SETTINGS_DIR" -cf - . \
+        | populate_volume_from_tar "$SKIP_CONFIG_VOLUME" \
             "tar -xf - -C /dst"
 fi
 
 GLOBAL_DIR="$SCRIPT_DIR/global"
 if [[ -d "$GLOBAL_DIR" ]] && [[ -n "$(ls -A "$GLOBAL_DIR" 2>/dev/null)" ]]; then
     tar -C "$GLOBAL_DIR" -cf - . \
-        | populate_volume_from_tar "$CLAUDE_CONFIG_VOLUME" \
+        | populate_volume_from_tar "$SKIP_CONFIG_VOLUME" \
             "tar -xf - -C /dst"
 fi
 
-CLAUDE_CONFIG_MOUNT_ARGS=(-v "$CLAUDE_CONFIG_VOLUME:/home/claude/.claude")
+SKIP_CONFIG_MOUNT_ARGS=(-v "$SKIP_CONFIG_VOLUME:/home/skip/.skip")
 
 
 # --- OpenCode global config dir ---
@@ -363,13 +363,13 @@ if [[ -d "$OPENCODE_DIR" ]] && [[ -n "$(ls -A "$OPENCODE_DIR" 2>/dev/null)" ]]; 
             "tar -xf - -C /dst"
 fi
 
-OPENCODE_CONFIG_MOUNT_ARGS=(-v "$OPENCODE_CONFIG_VOLUME:/home/claude/.config/opencode")
+OPENCODE_CONFIG_MOUNT_ARGS=(-v "$OPENCODE_CONFIG_VOLUME:/home/skip/.config/opencode")
 
 # --- Per-project memory dirs (opt-in via --memory) ---
-# Bind-mount only ~/.claude/projects/<slug>/memory/ from the host so
-# memory persists across container runs while the rest of ~/.claude stays
+# Bind-mount only ~/.skip/projects/<slug>/memory/ from the host so
+# memory persists across container runs while the rest of ~/.skip stays
 # isolated in the volume above. The slug encodes the container's project
-# path: /home/claude/project/<base> -> -home-claude-project-<base>.
+# path: /home/skip/project/<base> -> -home-skip-project-<base>.
 # Requires host userns + UID matching (set above) so writes round-trip.
 MEMORY_MOUNT_ARGS=()
 if [[ "$MOUNT_MEMORY" == true ]]; then
@@ -380,13 +380,13 @@ if [[ "$MOUNT_MEMORY" == true ]]; then
     for entry in "${project_entries[@]}"; do
         # base is the last tab-separated field in both array formats
         base="${entry##*$'\t'}"
-        slug="-home-claude-project-${base}"
-        host_mem="$HOME/.claude/projects/$slug/memory"
+        slug="-home-skip-project-${base}"
+        host_mem="$HOME/.skip/projects/$slug/memory"
         mkdir -p "$host_mem"
-        MEMORY_MOUNT_ARGS+=(-v "$host_mem:/home/claude/.claude/projects/$slug/memory")
+        MEMORY_MOUNT_ARGS+=(-v "$host_mem:/home/skip/.skip/projects/$slug/memory")
         mem_parent_paths+=("projects/$slug/memory")
     done
-    # Pre-create the parent dirs inside CLAUDE_CONFIG_VOLUME with claude
+    # Pre-create the parent dirs inside SKIP_CONFIG_VOLUME with skip
     # ownership. Without this, Docker materializes the bind-mount target
     # by creating projects/ and projects/<slug>/ inside the volume as
     # root, and the container user can't traverse or write siblings.
@@ -397,9 +397,9 @@ if [[ "$MOUNT_MEMORY" == true ]]; then
         done
         docker run --rm --user 0 --entrypoint sh \
             "${USERNS_ARGS[@]}" \
-            -v "$CLAUDE_CONFIG_VOLUME:/dst" \
+            -v "$SKIP_CONFIG_VOLUME:/dst" \
             "$IMAGE_NAME" \
-            -c "mkdir -p ${mkdir_args[*]} && chown -R $CLAUDE_UID:$CLAUDE_UID /dst/projects" \
+            -c "mkdir -p ${mkdir_args[*]} && chown -R $SKIP_UID:$SKIP_UID /dst/projects" \
             >/dev/null
     fi
 fi
@@ -415,9 +415,9 @@ if [[ "$START_POSTGRES" == true ]]; then
     POSTGRES_ENV_ARGS=(
         -e PGHOST=postgres
         -e PGPORT=5432
-        -e PGUSER=claude
-        -e PGPASSWORD=claude
-        -e PGDATABASE=claude
+        -e PGUSER=skip
+        -e PGPASSWORD=skip
+        -e PGDATABASE=skip
     )
 fi
 
@@ -443,7 +443,7 @@ docker run -it \
     "${AZURE_MOUNT_ARGS[@]}" \
     "${KUBE_MOUNT_ARGS[@]}" \
     "${GITCONFIG_MOUNT_ARGS[@]}" \
-    "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \
+    "${SKIP_CONFIG_MOUNT_ARGS[@]}" \
     "${OPENCODE_CONFIG_MOUNT_ARGS[@]}" \
     "${MEMORY_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
