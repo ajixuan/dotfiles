@@ -83,3 +83,4 @@ PATH=${PATH}:/home/aji/local_builds/usr/local/bin
 
 # opencode
 export PATH=/home/aji/.opencode/bin:$PATH
+. "$HOME/.cargo/env"

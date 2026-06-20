@@ -287,7 +287,24 @@ build_tools(){
     # upstream), so gnulib-tool doesn't fail trying to apply them.
     find "${download_dir}/gettext/gnulib-local" -name '*.diff' \
       -exec sh -c 'base="${1%.diff}"; f="$1"; gnulib_file="${GNULIB_SRCDIR}/${base#*/}"; [ -f "$gnulib_file" ] || mv "$f" "${f}.DELETE"' _ {} \;
-    std_build 'gettext' "${deps_build_dir}"
+
+    # Init AM_CFLAGS in Makefile.am before include of Makefile.gnulib
+    # so newer automake doesn't reject += without prior =.
+    for am in $(find "${download_dir}/gettext" -path "*/examples" -prune -o -name Makefile.am -print); do
+      grep -q "include Makefile.gnulib" "$am" 2>/dev/null || continue
+      sed -i "/^include Makefile.gnulib/i AM_CFLAGS =" "$am"
+    done
+    # Run autogen.sh first to regenerate configure from the patched
+    # configure.ac, then configure and build.
+    pushd .
+    cd "${download_dir}/gettext"
+    [ -f "./autogen.sh" ] && ./autogen.sh
+    [ -f "./configure" ] && \
+      ./configure "--prefix=${deps_build_dir}" --disable-dependency-tracking
+    make -j${job_count}
+    make -j${job_count} install
+    unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
+    popd
   fi
 
   # build bison
@@ -454,9 +471,12 @@ fi
 
 if ${export_path} ; then
   path_string='PATH=${PATH}:'"${build_dir}/bin"
-  rustup_home_path="RUSTUP_HOME=${build_dir}/usr/local/cargo"
-  cargo_home_path="CARGO_HOME=${build_dir}/usr/local/cargo"
   grep -qxF "${path_string}" "${HOME}/.bashrc" || echo ${path_string} >> "${HOME}/.bashrc"
-  grep -qxF "${cargo_home_path}" "${HOME}/.bashrc" || echo ${cargo_home_path} >> "${HOME}/.bashrc"
-  grep -qxF "${rustup_home_path}" "${HOME}/.bashrc" || echo ${rustup_home_path} >> "${HOME}/.bashrc"
+
+  if command -v rustc &>/dev/null; then
+    rustup_home_path="RUSTUP_HOME=${build_dir}/usr/local/cargo"
+    cargo_home_path="CARGO_HOME=${build_dir}/usr/local/cargo"
+    grep -qxF "${cargo_home_path}" "${HOME}/.bashrc" || echo ${cargo_home_path} >> "${HOME}/.bashrc"
+    grep -qxF "${rustup_home_path}" "${HOME}/.bashrc" || echo ${rustup_home_path} >> "${HOME}/.bashrc"
+  fi
 fi
