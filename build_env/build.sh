@@ -294,17 +294,11 @@ build_tools(){
       grep -q "include Makefile.gnulib" "$am" 2>/dev/null || continue
       sed -i "/^include Makefile.gnulib/i AM_CFLAGS =" "$am"
     done
-    # Run autogen.sh first to regenerate configure from the patched
-    # configure.ac, then configure and build.
-    pushd .
-    cd "${download_dir}/gettext"
-    [ -f "./autogen.sh" ] && ./autogen.sh
-    [ -f "./configure" ] && \
-      ./configure "--prefix=${deps_build_dir}" --disable-dependency-tracking
-    make -j${job_count}
-    make -j${job_count} install
-    unset CONFIG_FLAGS MAKE_FLAGS MAKE_INSTALL_FLAGS
-    popd
+    # Remove autogen.sh so std_build doesn't re-autoconf against
+    # bleeding-edge gnulib (its generated code uses idx_t from <idx.h>
+    # which gettext-0.21's gnulib modules don't provide).
+    rm -f "${download_dir}/gettext/autogen.sh"
+    CONFIG_FLAGS='--disable-dependency-tracking' std_build 'gettext' "${deps_build_dir}"
   fi
 
   # build bison
