@@ -50,7 +50,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # OpenTUI render library needs getcontext (removed in glibc 2.34+).
 # Copy libucontext built in the builder stage above.
-COPY --from=libucontext-builder /tmp/install/lib/libucontext.so.1 /usr/lib/libucontext.so.1
+COPY --from=libucontext-builder /tmp/install/usr/lib/libucontext.so.1 /usr/lib/libucontext.so.1
 
 # Azure CLI venv from builder
 COPY --from=az-builder /opt/az /opt/az
@@ -71,12 +71,21 @@ RUN curl -fsSL "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg -
     && chmod +x /usr/local/bin/crossplane
 
 ARG GO_VERSION=1.24.2
-RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz" \
+RUN curl -fsSL --retry 3 --http1.1 "https://go.dev/dl/go${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz" \
       | tar -C /usr/local -xz \
     && ln -s /usr/local/go/bin/go /usr/local/bin/go \
     && ln -s /usr/local/go/bin/gofmt /usr/local/bin/gofmt
 ENV GOPATH=/home/claude/go
 ENV PATH=$GOPATH/bin:$PATH
+
+RUN curl -fsSL --retry 3 --http1.1 "https://sh.rustup.rs" \
+      | sh -s -- -y --profile minimal \
+    && . "$HOME/.cargo/env" \
+    && rustup default stable \
+    && rm -rf "$HOME/.cargo/registry"
+
+ENV CARGO_HOME=/home/claude/.cargo
+ENV PATH=$CARGO_HOME/bin:$PATH
 
 RUN npm install -g @anthropic-ai/claude-code@latest && npm install -g opencode-ai && npm cache clean --force
 
