@@ -12,6 +12,18 @@
         "apiKey": "{env:DEEPSEEK_API_KEY}"
       },
       "models": {
+        "openrouter": {
+          "models": {
+            "moonshotai/kimi-k2": {
+              "options": {
+                "provider": {
+                   "order": ["baseten"],
+                    "allow_fallbacks": false
+                }
+              }
+            }
+          }
+        },
         "deepseek-v4-flash": {
           "name": "DeepSeek V4 Flash free",
           "tool_call": true,
