@@ -51,6 +51,7 @@ return {
   {
     "pmizio/typescript-tools.nvim",
     dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+    ft = "typescript",
     opts = {},
   },
   {
@@ -60,34 +61,33 @@ return {
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
     },
-    lazy = false,
+    keys = {
+      { "<leader>re", function() return require("refactoring").refactor('Extract Function') end, mode = { "n", "x" }, expr = true, desc = "Extract Function" },
+      { "<leader>rf", function() return require("refactoring").refactor('Extract Function To File') end, mode = { "n", "x" }, expr = true, desc = "Extract Function To File" },
+      { "<leader>rv", function() return require("refactoring").refactor('Extract Variable') end, mode = { "n", "x" }, expr = true, desc = "Extract Variable" },
+      { "<leader>rI", function() return require("refactoring").refactor('Inline Function') end, mode = { "n", "x" }, expr = true, desc = "Inline Function" },
+      { "<leader>ri", function() return require("refactoring").refactor('Inline Variable') end, mode = { "n", "x" }, expr = true, desc = "Inline Variable" },
+      { "<leader>rbb", function() return require("refactoring").refactor('Extract Block') end, mode = { "n", "x" }, expr = true, desc = "Extract Block" },
+      { "<leader>rbf", function() return require("refactoring").refactor('Extract Block To File') end, mode = { "n", "x" }, expr = true, desc = "Extract Block To File" },
+      { "<leader>rr", function() return require("refactoring").select_refactor() end, mode = { "n", "x" }, expr = true, desc = "Select refactor" },
+    },
     opts = {},
-    init = function(_, opts)
-      local refactoring = require('refactoring')
-      refactoring.setup(opts)
-      vim.keymap.set({ "n", "x" }, "<leader>re", function() return refactoring.refactor('Extract Function') end, { expr = true })
-      vim.keymap.set({ "n", "x" }, "<leader>rf", function() return refactoring.refactor('Extract Function To File') end, { expr = true })
-      vim.keymap.set({ "n", "x" }, "<leader>rv", function() return refactoring.refactor('Extract Variable') end, { expr = true })
-      vim.keymap.set({ "n", "x" }, "<leader>rI", function() return refactoring.refactor('Inline Function') end, { expr = true })
-      vim.keymap.set({ "n", "x" }, "<leader>ri", function() return refactoring.refactor('Inline Variable') end, { expr = true })
-      vim.keymap.set({ "n", "x" }, "<leader>rbb", function() return refactoring.refactor('Extract Block') end, { expr = true })
-      vim.keymap.set({ "n", "x" }, "<leader>rbf", function() return refactoring.refactor('Extract Block To File') end, { expr = true })
-      vim.keymap.set({ "n", "x" }, "<leader>rr", function() return refactoring.select_refactor() end, { expr = true })
+    config = function(_, opts)
+      require("refactoring").setup(opts)
     end,
   },
   {
     "nvim-treesitter/nvim-treesitter",
+    event = { "BufReadPost", "BufNewFile" },
     build = ":TSUpdate",
     dependencies = {
       'OXY2DEV/markview.nvim',
-      'windwp/nvim-ts-autotag',
     },
 
     -- NOTE
     -- We cannot use opts here, because someone decided to call config configs
     -- so the only way is to call configs explicitly in config function
     config = function()
-      require('nvim-ts-autotag').setup()
       require'nvim-treesitter.configs'.setup {
         -- A list of parser names, or "all" (the listed parsers MUST always be installed)
         ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "hcl", "terraform", "bash", "python", "helm", "yaml"  },
@@ -134,8 +134,16 @@ return {
   },
   {
     "m4xshen/autoclose.nvim",
-    init = function(_, opts)
+    event = "InsertEnter",
+    config = function()
       require("autoclose").setup()
     end
+  },
+  {
+    "windwp/nvim-ts-autotag",
+    event = "InsertEnter",
+    config = function()
+      require("nvim-ts-autotag").setup()
+    end,
   },
 }

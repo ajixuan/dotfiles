@@ -2,6 +2,14 @@ return {
   {
     "nickjvandyke/opencode.nvim",
     version = "*", -- Latest stable release
+    keys = {
+      { "<C-a>", mode = { "n", "x" }, function() require("opencode").ask("@this: ", { submit = true }) end, desc = "Ask opencode (auto-submit)" },
+      { "<C-x>", mode = { "n", "x" }, function() require("opencode").select() end, desc = "Execute opencode action" },
+      { "go", mode = { "n", "x" }, function() return require("opencode").operator("@this ") end, expr = true, desc = "Add range to opencode" },
+      { "goo", mode = { "n" }, function() return require("opencode").operator("@this ") .. "_" end, expr = true, desc = "Add line to opencode" },
+      { "<S-C-u>", mode = { "n" }, function() require("opencode").command("session.half.page.up") end, desc = "Scroll opencode up" },
+      { "<S-C-d>", mode = { "n" }, function() require("opencode").command("session.half.page.down") end, desc = "Scroll opencode down" },
+    },
     dependencies = {
       {
         -- `snacks.nvim` integration is recommended, but optional
@@ -49,6 +57,7 @@ return {
   },
   {
     "olimorris/codecompanion.nvim",
+    event = "VeryLazy",
     dependencies = {
       "nvim-lua/plenary.nvim",
       "nvim-treesitter/nvim-treesitter",
