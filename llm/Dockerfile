@@ -30,7 +30,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
        "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crank" \
        -o /usr/local/bin/crossplane \
     && chmod +x /usr/local/bin/crossplane \
-    && npm install -g --no-optional opencode-ai \
+    # Pinned to 1.16.2 — 1.17.0+ has a known TUI crash on startup
+    # (Effect.tryPromise). See https://github.com/anomalyco/opencode/issues/32706
+    && npm install -g --no-optional opencode-ai@1.16.2 \
     && npm cache clean --force \
     && rm -rf /tmp/* /root/.npm /root/.cache \
     && groupmod -n skip node \
