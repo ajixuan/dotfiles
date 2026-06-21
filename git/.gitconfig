@@ -31,3 +31,7 @@
 	process = git-lfs filter-process
 	required = true
 	clean = git-lfs clean -- %f
+[http]
+	sslCAinfo = /etc/ssl/certs/ca-certificates.crt
+[url "git@github.com:"]
+	insteadOf = https://github.com/
