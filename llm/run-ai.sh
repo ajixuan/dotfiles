@@ -57,6 +57,7 @@ for arg in "$@"; do
         --go)        MOUNT_GO=true ;;
         --rust)      MOUNT_RUST=true ;;
         --rebuild)   REBUILD=true ;;
+        -h|--help) usage ;;
         *)           DIRS+=("$arg") ;;
     esac
 done
