@@ -275,7 +275,7 @@ for entry in "${PROJECT_BINDS[@]}"; do
     echo "  $src -> $WORKDIR/$base (bind)"
 done
 
-# --- Azure credentials (opt-in via --azure) ---
+# --- Azure CLI + credentials (opt-in via --azure) ---
 AZURE_MOUNT_ARGS=()
 if [[ "$MOUNT_AZURE" == true ]]; then
     AZURE_DIR="${AZURE_CONFIG_DIR:-$HOME/.azure}"
@@ -288,6 +288,12 @@ if [[ "$MOUNT_AZURE" == true ]]; then
         AZURE_MOUNT_ARGS=(-v "$AZURE_VOLUME:/home/skip/.azure")
     else
         echo "Warning: Azure config dir '$AZURE_DIR' not found. Azure auth may fail." >&2
+    fi
+    # Mount the az binary from the host if available
+    if command -v az &>/dev/null; then
+        AZURE_MOUNT_ARGS+=(-v "$(command -v az):/usr/local/bin/az:ro")
+    else
+        echo "Warning: az not found on host PATH. Azure CLI binary mount skipped." >&2
     fi
 fi
 
