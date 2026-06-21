@@ -7,6 +7,11 @@ return {
     },
     config = function()
       require("nvim-tree").setup {
+        on_attach = function(bufnr)
+          local api = require("nvim-tree.api")
+          api.config.mappings.default_on_attach(bufnr)
+          vim.keymap.set("n", "<Tab>", api.tree.toggle, { buffer = bufnr, desc = "Toggle file tree" })
+        end,
         view = {
           width = 20,
           preserve_window_proportions = true,
