@@ -14,14 +14,17 @@
       },
       "models": {
         "openrouter": {
+          "options": {
+            "data_collection": false
+          },
           "models": {
             "moonshotai/kimi-k2": {
               "options": {
   "permission": "allow",
   "provider": {
-                   "order": ["baseten"],
-                    "allow_fallbacks": false
-                }
+                    "order": ["baseten"],
+                     "allow_fallbacks": false
+                 }
               }
             }
           }
