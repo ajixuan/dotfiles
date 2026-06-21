@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/skip/project"
 
 usage() {
-    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--rebuild] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
     echo "Each argument must be a git repository. By default, a clone of the repo"
     echo "at HEAD is copied into a named docker volume and mounted at"
@@ -29,6 +29,8 @@ usage() {
     echo "               Implies host userns (UID matching)."
     echo "  --postgres   Start the postgres sidecar (docker-compose.yml) and"
     echo "               attach the skip container to the skip-net network"
+    echo "  --go         Mount Go toolchain (/usr/local/go) from the host"
+    echo "  --rust       Mount Rust toolchain (~/.cargo, ~/.rustup) from the host"
     echo "  --rebuild    Force rebuild of the skip-code image"
     exit 1
 }
@@ -41,6 +43,8 @@ MOUNT_MEMORY=false
 START_POSTGRES=false
 REBUILD=false
 BIND_MOUNT=false
+MOUNT_GO=false
+MOUNT_RUST=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
@@ -50,6 +54,8 @@ for arg in "$@"; do
         --gitconfig) MOUNT_GITCONFIG=true ;;
         --memory)    MOUNT_MEMORY=true ;;
         --postgres)  START_POSTGRES=true ;;
+        --go)        MOUNT_GO=true ;;
+        --rust)      MOUNT_RUST=true ;;
         --rebuild)   REBUILD=true ;;
         *)           DIRS+=("$arg") ;;
     esac
@@ -365,6 +371,48 @@ fi
 
 OPENCODE_CONFIG_MOUNT_ARGS=(-v "$OPENCODE_CONFIG_VOLUME:/home/skip/.config/opencode")
 
+# --- Go toolchain (opt-in via --go) ---
+# --- Go toolchain (opt-in via --go) ---
+GO_MOUNT_ARGS=()
+if [[ "$MOUNT_GO" == true ]]; then
+    if [[ -d "/usr/local/go" ]]; then
+        GO_MOUNT_ARGS=(-v /usr/local/go:/usr/local/go:ro)
+    else
+        echo "Warning: /usr/local/go not found on host. Go mount skipped." >&2
+    fi
+fi
+
+# --- Rust toolchain (opt-in via --rust) ---
+RUST_MOUNT_ARGS=()
+if [[ "$MOUNT_RUST" == true ]]; then
+    if [[ -d "$HOME/.cargo" ]]; then
+        RUST_MOUNT_ARGS+=(-v "$HOME/.cargo:/home/claude/.cargo")
+    else
+        echo "Warning: $HOME/.cargo not found on host. Cargo mount skipped." >&2
+    fi
+    if [[ -d "$HOME/.rustup" ]]; then
+        RUST_MOUNT_ARGS+=(-v "$HOME/.rustup:/home/claude/.rustup")
+    fi
+fi
+
+# Build PATH additions for Go and/or Rust. Fetch the container's default
+# PATH so toolchain binaries are discoverable without hardcoding.
+TOOLCHAIN_ENV_ARGS=()
+TOOLCHAIN_PATH_PARTS=()
+if [[ "$MOUNT_GO" == true ]] && [[ -d "/usr/local/go" ]]; then
+    TOOLCHAIN_PATH_PARTS+=("/usr/local/go/bin")
+fi
+if [[ "$MOUNT_RUST" == true ]] && [[ -d "$HOME/.cargo" ]]; then
+    TOOLCHAIN_PATH_PARTS+=("/home/claude/.cargo/bin")
+    CARGO_HOME_ENV=(-e CARGO_HOME=/home/claude/.cargo)
+fi
+if [[ ${#TOOLCHAIN_PATH_PARTS[@]} -gt 0 ]]; then
+    IFS=: toolchain_path="${TOOLCHAIN_PATH_PARTS[*]}"
+    container_path="$(docker run --rm --entrypoint bash "$IMAGE_NAME" -c 'echo $PATH' 2>/dev/null)" \
+        || container_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    TOOLCHAIN_ENV_ARGS=(-e "PATH=$toolchain_path:$container_path")
+fi
+
 # --- Per-project memory dirs (opt-in via --memory) ---
 # Bind-mount only ~/.skip/projects/<slug>/memory/ from the host so
 # memory persists across container runs while the rest of ~/.skip stays
@@ -434,6 +482,8 @@ docker run -it \
     -e ANTHROPIC_FOUNDRY_RESOURCE=ia-foundry-coding-prod-eus2 \
     -e AZURE_TOKEN_CREDENTIALS=dev \
     -e AZURE_CORE_ENCRYPT_TOKEN_CACHE=false \
+    "${TOOLCHAIN_ENV_ARGS[@]}" \
+    "${CARGO_HOME_ENV[@]}" \
     "${USER_ARGS[@]}" \
     "${USERNS_ARGS[@]}" \
     "${HOME_MOUNT_ARGS[@]}" \
@@ -446,5 +496,7 @@ docker run -it \
     "${SKIP_CONFIG_MOUNT_ARGS[@]}" \
     "${OPENCODE_CONFIG_MOUNT_ARGS[@]}" \
     "${MEMORY_MOUNT_ARGS[@]}" \
+    "${GO_MOUNT_ARGS[@]}" \
+    "${RUST_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"

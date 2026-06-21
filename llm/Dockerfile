@@ -1,4 +1,4 @@
-# ---- stage 1: build azure-cli into a self-contained venv ----
+# ---- stage 1: build libucontext ----
 FROM node:22-slim AS libucontext-builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential ca-certificates git \
@@ -7,23 +7,18 @@ RUN git clone --depth 1 https://github.com/kaniini/libucontext.git /tmp/libucont
     && make -C /tmp/libucontext ARCH=$(uname -m) \
     && make -C /tmp/libucontext ARCH=$(uname -m) DESTDIR=/tmp/install install
 
+# ---- stage 2: build azure-cli venv ----
 FROM node:22-slim AS az-builder
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-pip python3-venv \
     && rm -rf /var/lib/apt/lists/*
-
 RUN python3 -m venv /opt/az \
     && /opt/az/bin/pip install --no-cache-dir azure-cli \
-    # Strip management-plane SDKs (198 MB) — only data-plane SDKs are kept
     && rm -rf /opt/az/lib/python3.*/site-packages/azure/mgmt \
-    # Strip CLI command modules (~95 MB) — keep only profile (az account/login),
-    # cloud, config, and extension; remove everything else
     && find /opt/az/lib/python3.*/site-packages/azure/cli/command_modules \
          -mindepth 1 -maxdepth 1 -type d \
          ! -name profile ! -name cloud ! -name configure ! -name config ! -name extension \
          -exec rm -rf {} + \
-    # Strip build-time tools not needed at runtime
     && rm -rf /opt/az/lib/python3.*/site-packages/pip \
               /opt/az/lib/python3.*/site-packages/setuptools \
               /opt/az/lib/python3.*/site-packages/pygments \
@@ -31,79 +26,43 @@ RUN python3 -m venv /opt/az \
     && find /opt/az -type d -name tests -exec rm -rf {} + 2>/dev/null; true \
     && find /opt/az -name '*.pyc' -delete 2>/dev/null; true
 
-# ---- stage 2: final image ----
+# ---- stage 3: final ----
 FROM node:22-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    jq \
-    make \
-    ripgrep \
-    ca-certificates \
-    python3 \
-    bubblewrap \
-    socat \
-    postgresql-client \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# OpenTUI render library needs getcontext (removed in glibc 2.34+).
-# Copy libucontext built in the builder stage above.
 COPY --from=libucontext-builder /tmp/install/usr/lib/libucontext.so.1 /usr/lib/libucontext.so.1
-
-# Azure CLI venv from builder
 COPY --from=az-builder /opt/az /opt/az
-RUN ln -s /opt/az/bin/az /usr/local/bin/az
 
-RUN curl -fsSL "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl" \
+# Single RUN layer so all cleanup is real (not hidden in prior layers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bubblewrap ca-certificates curl git jq make postgresql-client \
+    python3 ripgrep socat unzip \
+    && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /usr/share/locale/* \
+    && ln -s /opt/az/bin/az /usr/local/bin/az \
+    && curl -fsSL --retry 3 --http1.1 \
+       "https://dl.k8s.io/release/$(curl -fsSL https://dl.k8s.io/release/stable.txt)/bin/linux/$(dpkg --print-architecture)/kubectl" \
        -o /usr/local/bin/kubectl \
-    && chmod +x /usr/local/bin/kubectl
-
-RUN curl -fsSL "https://github.com/Azure/kubelogin/releases/latest/download/kubelogin-linux-$(dpkg --print-architecture).zip" \
+    && chmod +x /usr/local/bin/kubectl \
+    && curl -fsSL --retry 3 --http1.1 \
+       "https://github.com/Azure/kubelogin/releases/latest/download/kubelogin-linux-$(dpkg --print-architecture).zip" \
        -o /tmp/kubelogin.zip \
     && unzip -j /tmp/kubelogin.zip "bin/linux_$(dpkg --print-architecture)/kubelogin" -d /usr/local/bin \
-    && chmod +x /usr/local/bin/kubelogin \
-    && rm /tmp/kubelogin.zip
-
-RUN curl -fsSL "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crank" \
+    && rm /tmp/kubelogin.zip \
+    && curl -fsSL --retry 3 --http1.1 \
+       "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crank" \
        -o /usr/local/bin/crossplane \
-    && chmod +x /usr/local/bin/crossplane
-
-ARG GO_VERSION=1.24.2
-RUN curl -fsSL --retry 3 --http1.1 "https://go.dev/dl/go${GO_VERSION}.linux-$(dpkg --print-architecture).tar.gz" \
-      | tar -C /usr/local -xz \
-    && ln -s /usr/local/go/bin/go /usr/local/bin/go \
-    && ln -s /usr/local/go/bin/gofmt /usr/local/bin/gofmt
-ENV GOPATH=/home/claude/go
-ENV PATH=$GOPATH/bin:$PATH
-
-RUN curl -fsSL --retry 3 --http1.1 "https://sh.rustup.rs" \
-      | sh -s -- -y --profile minimal \
-    && . "$HOME/.cargo/env" \
-    && rustup default stable \
-    && rm -rf "$HOME/.cargo/registry"
-
-ENV CARGO_HOME=/home/claude/.cargo
-ENV PATH=$CARGO_HOME/bin:$PATH
-
-RUN npm install -g @anthropic-ai/claude-code@latest && npm install -g opencode-ai && npm cache clean --force
-
-# Rename the base image's node user (UID 1000) to claude rather than adding
-# a new claude user. With --userns=host (see run-claude.sh --bind), the host
-# UID runs directly in the container; on the common case of host UID 1000,
-# getpwuid() resolves to whichever name owns UID 1000 — so the name needs
-# to be "claude", not "node". /home/claude is made world-writable so any
-# host UID can use it as $HOME.
-RUN groupmod -n claude node \
+    && chmod +x /usr/local/bin/crossplane \
+    && npm install -g --no-optional @anthropic-ai/claude-code@latest opencode-ai \
+    && npm cache clean --force \
+    && rm -rf /tmp/* /root/.npm /root/.cache \
+    && groupmod -n claude node \
     && usermod -l claude -d /home/claude -m node \
+    && chmod -R a+rwX /home/claude \
     && echo "alias g='git'" >> /home/claude/.bashrc \
     && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/claude/.bashrc \
     && echo "alias ocode='opencode'" >> /home/claude/.bashrc \
     && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/claude/.bashrc \
-    && chown claude:claude /home/claude/.bashrc \
-    && chmod -R a+rwX /home/claude
+    && chown claude:claude /home/claude/.bashrc
+
 USER claude
 WORKDIR /home/claude/project
-
 ENTRYPOINT ["bash"]
