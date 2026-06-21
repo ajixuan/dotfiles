@@ -79,7 +79,6 @@ done
 #fzf
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 PATH=${PATH}:/home/aji/local_builds/usr/local/bin
-. "/home/aji/local_builds/usr/local/cargo/env"
 
 # opencode
 export PATH=/home/aji/.opencode/bin:$PATH
