@@ -1,27 +1,27 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: claude-postgres
+    container_name: skip-code-postgres
     environment:
-      POSTGRES_USER: claude
-      POSTGRES_PASSWORD: claude
-      POSTGRES_DB: claude
+      POSTGRES_USER: skip-code
+      POSTGRES_PASSWORD: skip-code
+      POSTGRES_DB: skip-code
     volumes:
-      - claude-postgres-data:/var/lib/postgresql/data
+      - skip-code-postgres-data:/var/lib/postgresql/data
     networks:
-      - claude-net
+      - skip-code-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U claude -d claude"]
+      test: ["CMD-SHELL", "pg_isready -U skip-code -d skip-code"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 networks:
-  claude-net:
-    name: claude-net
+  skip-code-net:
+    name: skip-code-net
     driver: bridge
 
 volumes:
-  claude-postgres-data:
-    name: claude-postgres-data
+  skip-code-postgres-data:
+    name: skip-code-postgres-data

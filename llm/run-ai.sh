@@ -28,7 +28,7 @@ usage() {
     echo "               sessions, agents, plugins stay containerized."
     echo "               Implies host userns (UID matching)."
     echo "  --postgres   Start the postgres sidecar (docker-compose.yml) and"
-    echo "               attach the skip container to the skip-net network"
+    echo "               attach the skip container to the skip-code-net network"
     echo "  --go         Mount Go toolchain (/usr/local/go) from the host"
     echo "  --rust       Mount Rust toolchain (~/.cargo, ~/.rustup) from the host"
     echo "  --rebuild    Force rebuild of the skip-code image"
@@ -79,11 +79,11 @@ else
 fi
 
 # Bring up sidecar services defined in docker-compose.yml (postgres, etc.)
-# and attach the skip container to the same network (skip-net) so it can
+# and attach the skip container to the same network (skip-code-net) so it can
 # reach them by service name. Opt-in via --postgres; compose state + named
 # volumes persist across sessions on purpose (postgres data is reusable).
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
-COMPOSE_NETWORK="skip-net"
+COMPOSE_NETWORK="skip-code-net"
 if [[ "$START_POSTGRES" == true ]]; then
     if [[ ! -f "$COMPOSE_FILE" ]]; then
         echo "Error: --postgres requested but $COMPOSE_FILE not found" >&2
