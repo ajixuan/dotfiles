@@ -386,12 +386,12 @@ fi
 RUST_MOUNT_ARGS=()
 if [[ "$MOUNT_RUST" == true ]]; then
     if [[ -d "$HOME/.cargo" ]]; then
-        RUST_MOUNT_ARGS+=(-v "$HOME/.cargo:/home/claude/.cargo")
+        RUST_MOUNT_ARGS+=(-v "$HOME/.cargo:/home/skip/.cargo")
     else
         echo "Warning: $HOME/.cargo not found on host. Cargo mount skipped." >&2
     fi
     if [[ -d "$HOME/.rustup" ]]; then
-        RUST_MOUNT_ARGS+=(-v "$HOME/.rustup:/home/claude/.rustup")
+        RUST_MOUNT_ARGS+=(-v "$HOME/.rustup:/home/skip/.rustup")
     fi
 fi
 
@@ -403,8 +403,8 @@ if [[ "$MOUNT_GO" == true ]] && [[ -d "/usr/local/go" ]]; then
     TOOLCHAIN_PATH_PARTS+=("/usr/local/go/bin")
 fi
 if [[ "$MOUNT_RUST" == true ]] && [[ -d "$HOME/.cargo" ]]; then
-    TOOLCHAIN_PATH_PARTS+=("/home/claude/.cargo/bin")
-    CARGO_HOME_ENV=(-e CARGO_HOME=/home/claude/.cargo)
+    TOOLCHAIN_PATH_PARTS+=("/home/skip/.cargo/bin")
+    CARGO_HOME_ENV=(-e CARGO_HOME=/home/skip/.cargo)
 fi
 if [[ ${#TOOLCHAIN_PATH_PARTS[@]} -gt 0 ]]; then
     IFS=: toolchain_path="${TOOLCHAIN_PATH_PARTS[*]}"

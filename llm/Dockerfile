@@ -54,15 +54,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && npm install -g --no-optional @anthropic-ai/claude-code@latest opencode-ai \
     && npm cache clean --force \
     && rm -rf /tmp/* /root/.npm /root/.cache \
-    && groupmod -n claude node \
-    && usermod -l claude -d /home/claude -m node \
-    && chmod -R a+rwX /home/claude \
-    && echo "alias g='git'" >> /home/claude/.bashrc \
-    && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/claude/.bashrc \
-    && echo "alias ocode='opencode'" >> /home/claude/.bashrc \
-    && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/claude/.bashrc \
-    && chown claude:claude /home/claude/.bashrc
+    && groupmod -n skip node \
+    && usermod -l skip -d /home/skip -m node \
+    && chmod -R a+rwX /home/skip \
+    && echo "alias g='git'" >> /home/skip/.bashrc \
+    && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/skip/.bashrc \
+    && echo "alias ocode='opencode'" >> /home/skip/.bashrc \
+    && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/skip/.bashrc \
+    && chown skip:skip /home/skip/.bashrc
 
-USER claude
-WORKDIR /home/claude/project
+USER skip
+WORKDIR /home/skip/project
 ENTRYPOINT ["bash"]
