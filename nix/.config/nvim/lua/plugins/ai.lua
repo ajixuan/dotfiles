@@ -3,8 +3,8 @@ return {
     "nickjvandyke/opencode.nvim",
     version = "*", -- Latest stable release
     keys = {
-      { "<C-a>", mode = { "n", "x" }, function() require("opencode").ask("@this: ", { submit = true }) end, desc = "Ask opencode (auto-submit)" },
-      { "<C-x>", mode = { "n", "x" }, function() require("opencode").select() end, desc = "Execute opencode action" },
+      { "<leader>oa", mode = { "n", "x" }, function() require("opencode").ask("@this: ") end, desc = "Ask opencode" },
+      { "<leader>os", mode = { "n", "x" }, function() require("opencode").select() end, desc = "Execute opencode action" },
       { "go", mode = { "n", "x" }, function() return require("opencode").operator("@this ") end, expr = true, desc = "Add range to opencode" },
       { "goo", mode = { "n" }, function() return require("opencode").operator("@this ") .. "_" end, expr = true, desc = "Add line to opencode" },
       { "<S-C-u>", mode = { "n" }, function() require("opencode").command("session.half.page.up") end, desc = "Scroll opencode up" },
@@ -36,23 +36,21 @@ return {
     config = function()
       ---@type opencode.Opts
       vim.g.opencode_opts = {
-        -- Your configuration, if any; goto definition on the type or field for details
+        server = {
+          start = false,
+        },
       }
 
       vim.o.autoread = true -- Required for `opts.events.reload`
 
       -- Recommended/example keymaps
-      vim.keymap.set({ "n", "x" }, "<C-a>", function() require("opencode").ask("@this: ", { submit = true }) end, { desc = "Ask opencode (auto-submit)" })
-      vim.keymap.set({ "n", "x" }, "<C-x>", function() require("opencode").select() end,                          { desc = "Execute opencode action…" })
+      vim.keymap.set({ "n", "x" }, "<leader>oa", function() require("opencode").ask("@this: ") end, { desc = "Ask opencode" })
+      vim.keymap.set({ "n", "x" }, "<leader>os", function() require("opencode").select() end, { desc = "Execute opencode action" })
       vim.keymap.set({ "n", "x" }, "go",  function() return require("opencode").operator("@this ") end,        { desc = "Add range to opencode", expr = true })
       vim.keymap.set("n", "goo", function() return require("opencode").operator("@this ") .. "_" end, { desc = "Add line to opencode", expr = true })
 
       vim.keymap.set("n", "<S-C-u>", function() require("opencode").command("session.half.page.up") end,   { desc = "Scroll opencode up" })
       vim.keymap.set("n", "<S-C-d>", function() require("opencode").command("session.half.page.down") end, { desc = "Scroll opencode down" })
-
-      -- You may want these if you use the opinionated `<C-a>` and `<C-x>` keymaps above — otherwise consider `<leader>o…` (and remove terminal mode from the `toggle` keymap)
-      vim.keymap.set("n", "+", "<C-a>", { desc = "Increment under cursor", noremap = true })
-      vim.keymap.set("n", "-", "<C-x>", { desc = "Decrement under cursor", noremap = true })
     end,
   },
   {
@@ -68,7 +66,7 @@ return {
       interactions =  {
         chat = {
           adapter = {
-            name = "copilot"
+            name = "opencode_deepseek"
           }
         }
 
@@ -101,7 +99,26 @@ return {
                   api_key = "cmd: gpg --batch --quiet --decrypt ../llms/venice.gpg"
                 },
               })
-            end
+            end,
+            opencode_deepseek = function()
+              return require("codecompanion.adapters").extend("deepseek", {
+                name = "opencode_deepseek",
+                formatted_name = "DeepSeek (OpenCode)",
+                env = {
+                  api_key = "cmd: echo $DEEPSEEK_API_KEY",
+                },
+              })
+            end,
+            opencode_claude = function()
+              return require("codecompanion.adapters").extend("anthropic", {
+                name = "opencode_claude",
+                formatted_name = "Claude (OpenCode)",
+                env = {
+                  url = "https://ia-foundry-coding-prod-eus2.services.ai.azure.com/anthropic/v1",
+                  api_key = "cmd: echo $AZURE_ANTHROPIC_API_KEY",
+                },
+              })
+            end,
           }
         },
       })
