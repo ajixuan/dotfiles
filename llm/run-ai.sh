@@ -118,17 +118,37 @@ if [[ ${#DIRS[@]} -lt 1 ]]; then
     DIRS=("$tmpdir")
 fi
 
-# Validate each argument is an existing git repository
+# Validate each argument is a git repository, or expand a parent directory
+# into the git repos it contains one level down (e.g. ~/repos/codered/ ->
+# ~/repos/codered/{repo1,repo2,...}). Anything that's neither is an error.
+EXPANDED_DIRS=()
 for dir in "${DIRS[@]}"; do
     if [[ ! -d "$dir" ]]; then
         echo "Error: '$dir' is not a directory" >&2
         exit 1
     fi
-    if ! git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-        echo "Error: '$dir' is not a git repository" >&2
+    if git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        EXPANDED_DIRS+=("$dir")
+        continue
+    fi
+    children=()
+    for child in "$dir"/*/; do
+        [[ -d "$child" ]] || continue
+        if git -C "$child" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            children+=("${child%/}")
+        fi
+    done
+    if [[ ${#children[@]} -eq 0 ]]; then
+        echo "Error: '$dir' is not a git repository and contains no git repos" >&2
         exit 1
     fi
+    echo "Expanding '$dir' into ${#children[@]} sub-repo(s):"
+    for c in "${children[@]}"; do
+        echo "  $c"
+    done
+    EXPANDED_DIRS+=("${children[@]}")
 done
+DIRS=("${EXPANDED_DIRS[@]}")
 
 
 # All volumes created this run. They're referenced by the exited container

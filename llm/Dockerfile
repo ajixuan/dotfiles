@@ -26,17 +26,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
        -o /tmp/kubelogin.zip \
     && unzip -j /tmp/kubelogin.zip "bin/linux_$(dpkg --print-architecture)/kubelogin" -d /usr/local/bin \
     && rm /tmp/kubelogin.zip \
-    && curl -fsSL --retry 3 --http1.1 \
-       "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crossplane" \
-       -o /usr/local/bin/crossplane \
-    && chmod +x /usr/local/bin/crossplane \
     && npm cache clean --force \
     && rm -rf /tmp/* /root/.npm /root/.cache \
     && groupmod -n skip node \
     && usermod -l skip -d /home/skip -m node \
     && chmod -R a+rwX /home/skip \
     && echo "alias g='git'" >> /home/skip/.bashrc \
-    && echo "alias clawde='claude --dangerously-skip-permissions ./'" >> /home/skip/.bashrc \
+    && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/skip/.bashrc \
     && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/skip/.bashrc \
     && chown skip:skip /home/skip/.bashrc
 
