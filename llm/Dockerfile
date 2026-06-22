@@ -30,17 +30,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
        "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crank" \
        -o /usr/local/bin/crossplane \
     && chmod +x /usr/local/bin/crossplane \
-    # Pinned to 1.16.2 — 1.17.0+ has a known TUI crash on startup
-    # (Effect.tryPromise). See https://github.com/anomalyco/opencode/issues/32706
-    && npm install -g --no-optional opencode-ai@1.16.2 \
     && npm cache clean --force \
     && rm -rf /tmp/* /root/.npm /root/.cache \
     && groupmod -n skip node \
     && usermod -l skip -d /home/skip -m node \
     && chmod -R a+rwX /home/skip \
     && echo "alias g='git'" >> /home/skip/.bashrc \
-    && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/skip/.bashrc \
-    && echo "alias ocode='opencode'" >> /home/skip/.bashrc \
     && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/skip/.bashrc \
     && chown skip:skip /home/skip/.bashrc
 

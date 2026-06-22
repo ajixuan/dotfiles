@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/skip/project"
 
 usage() {
-    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--rebuild] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--opencode] [--claude] [--python] [--npm] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
     echo "Each argument must be a git repository. By default, a clone of the repo"
     echo "at HEAD is copied into a named docker volume and mounted at"
@@ -31,6 +31,10 @@ usage() {
     echo "               attach the skip container to the skip-code-net network"
     echo "  --go         Mount Go toolchain (/usr/local/go) from the host"
     echo "  --rust       Mount Rust toolchain (~/.cargo, ~/.rustup) from the host"
+    echo "  --opencode   Mount opencode CLI from the host's npm global install"
+    echo "  --claude     Mount Claude Code CLI from the host's npm global install"
+    echo "  --python     Mount uv (Python package manager) from the host's PATH"
+    echo "  --npm        Mount npm global tools (typescript, tsx, etc.) from the host's npm global install"
     echo "  --rebuild    Force rebuild of the skip-code image"
     exit 1
 }
@@ -45,6 +49,10 @@ REBUILD=false
 BIND_MOUNT=false
 MOUNT_GO=false
 MOUNT_RUST=false
+MOUNT_OPENCODE=false
+MOUNT_CLAUDE=false
+MOUNT_PYTHON=false
+MOUNT_NPM=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
@@ -56,6 +64,8 @@ for arg in "$@"; do
         --postgres)  START_POSTGRES=true ;;
         --go)        MOUNT_GO=true ;;
         --rust)      MOUNT_RUST=true ;;
+        --opencode)  MOUNT_OPENCODE=true ;;
+        --claude)    MOUNT_CLAUDE=true ;;
         --rebuild)   REBUILD=true ;;
         -h|--help) usage ;;
         *)           DIRS+=("$arg") ;;
@@ -402,6 +412,123 @@ if [[ "$MOUNT_RUST" == true ]]; then
     fi
 fi
 
+# --- OpenCode CLI (opt-in via --opencode) ---
+# Instead of baking npm install -g opencode-ai into the image, mount
+# the host's global npm install at runtime. Resolve the real bin path
+# and mount the package directory so node module resolution works.
+OPENCODE_CLI_MOUNT_ARGS=()
+if [[ "$MOUNT_OPENCODE" == true ]]; then
+    if command -v opencode &>/dev/null; then
+        npm_root="$(npm root -g 2>/dev/null || echo /usr/local/lib/node_modules)"
+        pkg_dir="$npm_root/opencode-ai"
+        if [[ -d "$pkg_dir" ]]; then
+            real_bin="$(readlink -f "$(command -v opencode)")"
+            echo "  $pkg_dir -> $pkg_dir (ro)"
+            OPENCODE_CLI_MOUNT_ARGS+=(-v "$pkg_dir:$pkg_dir:ro")
+
+            wrapper="$(mktemp)"
+            cat > "$wrapper" << WRAP
+#!/bin/sh
+exec node "$real_bin" "\$@"
+WRAP
+            chmod +x "$wrapper"
+            echo "  $real_bin -> /usr/local/bin/opencode (wrapper)"
+            OPENCODE_CLI_MOUNT_ARGS+=(-v "$wrapper:/usr/local/bin/opencode:ro")
+        fi
+    else
+        echo "Warning: opencode not found on host PATH. --opencode flag ignored." >&2
+    fi
+fi
+
+# --- Claude Code CLI (opt-in via --claude) ---
+CLAUDE_CLI_MOUNT_ARGS=()
+if [[ "$MOUNT_CLAUDE" == true ]]; then
+    if command -v claude &>/dev/null; then
+        npm_root="$(npm root -g 2>/dev/null || echo /usr/local/lib/node_modules)"
+        pkg_dir="$npm_root/@anthropic-ai/claude-code"
+        if [[ -d "$pkg_dir" ]]; then
+            real_bin="$(readlink -f "$(command -v claude)")"
+            echo "  $pkg_dir -> $pkg_dir (ro)"
+            CLAUDE_CLI_MOUNT_ARGS+=(-v "$pkg_dir:$pkg_dir:ro")
+
+            wrapper="$(mktemp)"
+            cat > "$wrapper" << WRAP
+#!/bin/sh
+exec node "$real_bin" "\$@"
+WRAP
+            chmod +x "$wrapper"
+            echo "  $real_bin -> /usr/local/bin/claude (wrapper)"
+            CLAUDE_CLI_MOUNT_ARGS+=(-v "$wrapper:/usr/local/bin/claude:ro")
+        fi
+    else
+        echo "Warning: claude not found on host PATH. --claude flag ignored." >&2
+    fi
+fi
+
+# --- Python / uv (opt-in via --python) ---
+# Mount the host's uv binary (Python package manager). The container
+# already has python3 from apt; uv adds fast package management.
+PYTHON_MOUNT_ARGS=()
+if [[ "$MOUNT_PYTHON" == true ]]; then
+    if command -v uv &>/dev/null; then
+        uv_bin="$(command -v uv)"
+        echo "  $uv_bin -> /usr/local/bin/uv (ro)"
+        PYTHON_MOUNT_ARGS+=(-v "$uv_bin:/usr/local/bin/uv:ro")
+
+        if command -v uvx &>/dev/null; then
+            uvx_bin="$(command -v uvx)"
+            echo "  $uvx_bin -> /usr/local/bin/uvx (ro)"
+            PYTHON_MOUNT_ARGS+=(-v "$uvx_bin:/usr/local/bin/uvx:ro")
+        fi
+
+        if [[ -d "$HOME/.cache/uv" ]]; then
+            echo "  $HOME/.cache/uv -> /home/skip/.cache/uv"
+            PYTHON_MOUNT_ARGS+=(-v "$HOME/.cache/uv:/home/skip/.cache/uv")
+        fi
+    else
+        echo "Warning: uv not found on host PATH. --python flag ignored." >&2
+    fi
+fi
+
+# --- npm global tools (opt-in via --npm) ---
+# Mount the host's npm globally-installed packages (typescript, tsx,
+# etc.) so they are available in the container without baking them in.
+# The node_modules are mounted at a non-conflicting path and binaries
+# get wrapper scripts.
+NPM_MOUNT_ARGS=()
+NPM_ENV_ARGS=()
+if [[ "$MOUNT_NPM" == true ]]; then
+    host_npm_root="$(npm root -g 2>/dev/null || echo /usr/local/lib/node_modules)"
+    if [[ -d "$host_npm_root" ]]; then
+        mount_npm_root="/usr/local/lib/host-npm-global"
+        echo "  $host_npm_root -> $mount_npm_root (ro)"
+        NPM_MOUNT_ARGS+=(-v "$host_npm_root:$mount_npm_root:ro")
+        NPM_ENV_ARGS=(-e NODE_PATH="$mount_npm_root")
+
+        npm_bin_dir="$(npm bin -g 2>/dev/null || echo /usr/local/bin)"
+        for bin_path in "$npm_bin_dir"/*; do
+            [[ -f "$bin_path" || -L "$bin_path" ]] || continue
+            name="$(basename "$bin_path")"
+            [[ "$name" =~ ^(node|npm|npx|corepack|opencode|claude)$ ]] && continue
+
+            real_bin="$(readlink -f "$bin_path")"
+            suffix="${real_bin#"$host_npm_root"}"
+            mounted_bin="$mount_npm_root$suffix"
+
+            wrapper="$(mktemp)"
+            cat > "$wrapper" << WRAP
+#!/bin/sh
+exec node "$mounted_bin" "$@"
+WRAP
+            chmod +x "$wrapper"
+            echo "  $name -> /usr/local/bin/$name (npm global wrapper)"
+            NPM_MOUNT_ARGS+=(-v "$wrapper:/usr/local/bin/$name:ro")
+        done
+    else
+        echo "Warning: npm global root not found at $host_npm_root. --npm flag ignored." >&2
+    fi
+fi
+
 # Build PATH additions for Go and/or Rust. Fetch the container's default
 # PATH so toolchain binaries are discoverable without hardcoding.
 TOOLCHAIN_ENV_ARGS=()
@@ -491,6 +618,7 @@ docker run -it \
     -e AZURE_TOKEN_CREDENTIALS=dev \
     -e AZURE_CORE_ENCRYPT_TOKEN_CACHE=false \
     "${TOOLCHAIN_ENV_ARGS[@]}" \
+    "${NPM_ENV_ARGS[@]}" \
     "${CARGO_HOME_ENV[@]}" \
     "${USER_ARGS[@]}" \
     "${USERNS_ARGS[@]}" \
@@ -506,5 +634,9 @@ docker run -it \
     "${MEMORY_MOUNT_ARGS[@]}" \
     "${GO_MOUNT_ARGS[@]}" \
     "${RUST_MOUNT_ARGS[@]}" \
+    "${OPENCODE_CLI_MOUNT_ARGS[@]}" \
+    "${CLAUDE_CLI_MOUNT_ARGS[@]}" \
+    "${PYTHON_MOUNT_ARGS[@]}" \
+    "${NPM_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"
