@@ -1,5 +1,5 @@
 # ---- stage 1: build libucontext ----
-FROM node:22-slim AS libucontext-builder
+FROM node:22-trixie-slim AS libucontext-builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
@@ -8,7 +8,7 @@ RUN git clone --depth 1 https://github.com/kaniini/libucontext.git /tmp/libucont
     && make -C /tmp/libucontext ARCH=$(uname -m) DESTDIR=/tmp/install install
 
 # ---- stage 2: final ----
-FROM node:22-slim
+FROM node:22-trixie-slim
 
 COPY --from=libucontext-builder /tmp/install/usr/lib/libucontext.so.1 /usr/lib/libucontext.so.1
 
@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && unzip -j /tmp/kubelogin.zip "bin/linux_$(dpkg --print-architecture)/kubelogin" -d /usr/local/bin \
     && rm /tmp/kubelogin.zip \
     && curl -fsSL --retry 3 --http1.1 \
-       "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crank" \
+       "https://releases.crossplane.io/stable/current/bin/linux_$(dpkg --print-architecture)/crossplane" \
        -o /usr/local/bin/crossplane \
     && chmod +x /usr/local/bin/crossplane \
     && npm cache clean --force \
@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && usermod -l skip -d /home/skip -m node \
     && chmod -R a+rwX /home/skip \
     && echo "alias g='git'" >> /home/skip/.bashrc \
+    && echo "alias clawde='claude --dangerously-skip-permissions ./'" >> /home/skip/.bashrc \
     && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/skip/.bashrc \
     && chown skip:skip /home/skip/.bashrc
 

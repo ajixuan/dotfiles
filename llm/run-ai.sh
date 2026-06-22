@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/skip/project"
 
 usage() {
-    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--opencode] [--claude] [--python] [--npm] [--rebuild] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--opencode] [--claude] [--python] [--npm] [--crossplane] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
     echo "Each argument must be a git repository. By default, a clone of the repo"
     echo "at HEAD is copied into a named docker volume and mounted at"
@@ -35,6 +35,7 @@ usage() {
     echo "  --claude     Mount Claude Code CLI from the host (native binary or npm global)"
     echo "  --python     Mount uv (Python package manager) from the host's PATH"
     echo "  --npm        Mount npm global tools (typescript, tsx, etc.) from the host's npm global install"
+    echo "  --crossplane Mount the host's crossplane CLI binary (overrides the version baked into the image)"
     echo "  --rebuild    Force rebuild of the skip-code image"
     exit 1
 }
@@ -53,6 +54,7 @@ MOUNT_OPENCODE=false
 MOUNT_CLAUDE=false
 MOUNT_PYTHON=false
 MOUNT_NPM=false
+MOUNT_CROSSPLANE=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
@@ -68,6 +70,7 @@ for arg in "$@"; do
         --claude)    MOUNT_CLAUDE=true ;;
         --python)    MOUNT_PYTHON=true ;;
         --npm)       MOUNT_NPM=true ;;
+        --crossplane) MOUNT_CROSSPLANE=true ;;
         --rebuild)   REBUILD=true ;;
         -h|--help) usage ;;
         *)           DIRS+=("$arg") ;;
@@ -590,6 +593,22 @@ WRAP
     fi
 fi
 
+# --- Crossplane CLI (opt-in via --crossplane) ---
+# Bind-mount the host's crossplane binary on top of the version baked
+# into the image. Useful when the host has a newer release or a local
+# build to test against. The upstream binary is statically linked, so a
+# straight file bind-mount is sufficient.
+CROSSPLANE_MOUNT_ARGS=()
+if [[ "$MOUNT_CROSSPLANE" == true ]]; then
+    if command -v crossplane &>/dev/null; then
+        crossplane_bin="$(readlink -f "$(command -v crossplane)")"
+        echo "  $crossplane_bin -> /usr/local/bin/crossplane (ro)"
+        CROSSPLANE_MOUNT_ARGS+=(-v "$crossplane_bin:/usr/local/bin/crossplane:ro")
+    else
+        echo "Warning: crossplane not found on host PATH. --crossplane flag ignored." >&2
+    fi
+fi
+
 # Build PATH additions for Go and/or Rust. Fetch the container's default
 # PATH so toolchain binaries are discoverable without hardcoding.
 TOOLCHAIN_ENV_ARGS=()
@@ -700,5 +719,6 @@ docker run -it \
     "${CLAUDE_CLI_MOUNT_ARGS[@]}" \
     "${PYTHON_MOUNT_ARGS[@]}" \
     "${NPM_MOUNT_ARGS[@]}" \
+    "${CROSSPLANE_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"
