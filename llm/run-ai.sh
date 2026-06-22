@@ -31,8 +31,8 @@ usage() {
     echo "               attach the skip container to the skip-code-net network"
     echo "  --go         Mount Go toolchain (/usr/local/go) from the host"
     echo "  --rust       Mount Rust toolchain (~/.cargo, ~/.rustup) from the host"
-    echo "  --opencode   Mount opencode CLI from the host's npm global install"
-    echo "  --claude     Mount Claude Code CLI from the host's npm global install"
+    echo "  --opencode   Mount opencode CLI from the host (native binary or npm global)"
+    echo "  --claude     Mount Claude Code CLI from the host (native binary or npm global)"
     echo "  --python     Mount uv (Python package manager) from the host's PATH"
     echo "  --npm        Mount npm global tools (typescript, tsx, etc.) from the host's npm global install"
     echo "  --rebuild    Force rebuild of the skip-code image"
@@ -66,6 +66,8 @@ for arg in "$@"; do
         --rust)      MOUNT_RUST=true ;;
         --opencode)  MOUNT_OPENCODE=true ;;
         --claude)    MOUNT_CLAUDE=true ;;
+        --python)    MOUNT_PYTHON=true ;;
+        --npm)       MOUNT_NPM=true ;;
         --rebuild)   REBUILD=true ;;
         -h|--help) usage ;;
         *)           DIRS+=("$arg") ;;
@@ -300,9 +302,22 @@ if [[ "$MOUNT_AZURE" == true ]]; then
     else
         echo "Warning: Azure config dir '$AZURE_DIR' not found. Azure auth may fail." >&2
     fi
-    # Mount the az binary from the host if available
+    # Mount the az binary from the host if available. The Debian/Ubuntu apt
+    # install ships /usr/bin/az as a thin bash wrapper that invokes
+    # `$bin_dir/../../opt/az/bin/python3 -Im azure.cli`. That relative path
+    # only resolves to /opt/az when the wrapper itself sits in /usr/bin —
+    # mounting it under /usr/local/bin lands on /usr/opt/az and breaks.
+    # When the host install matches that layout, mount the wrapper at
+    # /usr/bin/az and bind-mount /opt/az alongside so the bundled python +
+    # azure.cli module are visible. Otherwise fall back to /usr/local/bin
+    # (works for pip/single-file installs).
     if command -v az &>/dev/null; then
-        AZURE_MOUNT_ARGS+=(-v "$(command -v az):/usr/local/bin/az:ro")
+        real_az="$(readlink -f "$(command -v az)")"
+        if [[ -d /opt/az ]] && grep -q '/opt/az/bin/python3' "$real_az" 2>/dev/null; then
+            AZURE_MOUNT_ARGS+=(-v "$real_az:/usr/bin/az:ro" -v /opt/az:/opt/az:ro)
+        else
+            AZURE_MOUNT_ARGS+=(-v "$real_az:/usr/local/bin/az:ro")
+        fi
     else
         echo "Warning: az not found on host PATH. Azure CLI binary mount skipped." >&2
     fi
@@ -412,56 +427,96 @@ if [[ "$MOUNT_RUST" == true ]]; then
     fi
 fi
 
-# --- OpenCode CLI (opt-in via --opencode) ---
-# Instead of baking npm install -g opencode-ai into the image, mount
-# the host's global npm install at runtime. Resolve the real bin path
-# and mount the package directory so node module resolution works.
-OPENCODE_CLI_MOUNT_ARGS=()
-if [[ "$MOUNT_OPENCODE" == true ]]; then
-    if command -v opencode &>/dev/null; then
-        npm_root="$(npm root -g 2>/dev/null || echo /usr/local/lib/node_modules)"
-        pkg_dir="$npm_root/opencode-ai"
-        if [[ -d "$pkg_dir" ]]; then
-            real_bin="$(readlink -f "$(command -v opencode)")"
-            echo "  $pkg_dir -> $pkg_dir (ro)"
-            OPENCODE_CLI_MOUNT_ARGS+=(-v "$pkg_dir:$pkg_dir:ro")
+# Resolve a host CLI to mounts that expose it inside the container. Two
+# install shapes are supported:
+#   1. Native ELF (official installer, e.g. ~/.local/share/claude/versions/X
+#      or ~/.opencode/bin/opencode) — bind-mount the binary at
+#      /usr/local/bin/<cmd>; no wrapper needed.
+#   2. npm global install — mount the package directory at its real path so
+#      node module resolution works, plus a tiny `node $real_bin` wrapper at
+#      /usr/local/bin/<cmd>.
+# Appends -v args to the named array. Prints a warning and leaves the array
+# untouched if the CLI can't be found.
+resolve_cli_mounts() {
+    local cmd="$1" pkg_name="$2" out_var="$3"
+    if ! command -v "$cmd" &>/dev/null; then
+        echo "Warning: $cmd not found on host PATH. --$cmd flag ignored." >&2
+        return
+    fi
+    local real_bin
+    real_bin="$(readlink -f "$(command -v "$cmd")")"
 
-            wrapper="$(mktemp)"
-            cat > "$wrapper" << WRAP
+    if [[ -x "$real_bin" ]] && LC_ALL=C head -c 4 "$real_bin" 2>/dev/null \
+            | grep -q $'^\x7fELF'; then
+        echo "  $real_bin -> /usr/local/bin/$cmd (ro)"
+        eval "$out_var+=(-v \"\$real_bin:/usr/local/bin/$cmd:ro\")"
+        return
+    fi
+
+    local npm_root pkg_dir
+    npm_root="$(npm root -g 2>/dev/null || echo /usr/local/lib/node_modules)"
+    pkg_dir="$npm_root/$pkg_name"
+    if [[ ! -d "$pkg_dir" ]]; then
+        echo "Warning: $cmd at $real_bin is not a native binary and $pkg_dir is missing. --$cmd flag ignored." >&2
+        return
+    fi
+    echo "  $pkg_dir -> $pkg_dir (ro)"
+    eval "$out_var+=(-v \"\$pkg_dir:\$pkg_dir:ro\")"
+
+    local wrapper
+    wrapper="$(mktemp)"
+    cat > "$wrapper" << WRAP
 #!/bin/sh
 exec node "$real_bin" "\$@"
 WRAP
-            chmod +x "$wrapper"
-            echo "  $real_bin -> /usr/local/bin/opencode (wrapper)"
-            OPENCODE_CLI_MOUNT_ARGS+=(-v "$wrapper:/usr/local/bin/opencode:ro")
-        fi
-    else
-        echo "Warning: opencode not found on host PATH. --opencode flag ignored." >&2
-    fi
+    chmod +x "$wrapper"
+    echo "  $real_bin -> /usr/local/bin/$cmd (wrapper)"
+    eval "$out_var+=(-v \"\$wrapper:/usr/local/bin/$cmd:ro\")"
+}
+
+# --- OpenCode CLI (opt-in via --opencode) ---
+OPENCODE_CLI_MOUNT_ARGS=()
+if [[ "$MOUNT_OPENCODE" == true ]]; then
+    resolve_cli_mounts opencode opencode-ai OPENCODE_CLI_MOUNT_ARGS
 fi
 
 # --- Claude Code CLI (opt-in via --claude) ---
+# The official installer (claude.ai/install.sh) stores the binary at
+# $HOME/.local/share/claude/versions/<ver> with $HOME/.local/bin/claude
+# as a symlink to it. The binary self-checks that layout at startup —
+# a plain bind-mount to /usr/local/bin/claude trips
+# "claude command at .../.local/bin/claude missing or broken · run
+# claude install to repair". Detect that layout and replicate it inside
+# the container by populating a volume at /home/skip/.local with the
+# active version + symlink, plus a tiny /usr/local/bin/claude shim that
+# execs through the expected path.
 CLAUDE_CLI_MOUNT_ARGS=()
 if [[ "$MOUNT_CLAUDE" == true ]]; then
-    if command -v claude &>/dev/null; then
-        npm_root="$(npm root -g 2>/dev/null || echo /usr/local/lib/node_modules)"
-        pkg_dir="$npm_root/@anthropic-ai/claude-code"
-        if [[ -d "$pkg_dir" ]]; then
-            real_bin="$(readlink -f "$(command -v claude)")"
-            echo "  $pkg_dir -> $pkg_dir (ro)"
-            CLAUDE_CLI_MOUNT_ARGS+=(-v "$pkg_dir:$pkg_dir:ro")
-
-            wrapper="$(mktemp)"
-            cat > "$wrapper" << WRAP
-#!/bin/sh
-exec node "$real_bin" "\$@"
-WRAP
-            chmod +x "$wrapper"
-            echo "  $real_bin -> /usr/local/bin/claude (wrapper)"
-            CLAUDE_CLI_MOUNT_ARGS+=(-v "$wrapper:/usr/local/bin/claude:ro")
-        fi
-    else
+    if ! command -v claude &>/dev/null; then
         echo "Warning: claude not found on host PATH. --claude flag ignored." >&2
+    else
+        claude_real="$(readlink -f "$(command -v claude)")"
+        claude_host_share="$HOME/.local/share/claude"
+        if [[ -x "$claude_real" ]] && [[ "$claude_real" == "$claude_host_share"/versions/* ]]; then
+            version_name="$(basename "$claude_real")"
+            CLAUDE_VOLUME="$(docker volume create)"
+            SESSION_VOLUMES+=("$CLAUDE_VOLUME")
+            tar -C "$claude_host_share/versions" -cf - "$version_name" \
+                | populate_volume_from_tar "$CLAUDE_VOLUME" \
+                    "mkdir -p /dst/share/claude/versions /dst/bin && tar -xf - -C /dst/share/claude/versions && ln -sf /home/skip/.local/share/claude/versions/$version_name /dst/bin/claude"
+            CLAUDE_CLI_MOUNT_ARGS+=(-v "$CLAUDE_VOLUME:/home/skip/.local")
+
+            claude_wrapper="$(mktemp)"
+            cat > "$claude_wrapper" << WRAP
+#!/bin/sh
+exec /home/skip/.local/bin/claude "\$@"
+WRAP
+            chmod +x "$claude_wrapper"
+            CLAUDE_CLI_MOUNT_ARGS+=(-v "$claude_wrapper:/usr/local/bin/claude:ro")
+            echo "  $claude_real -> /home/skip/.local/share/claude/versions/$version_name (volume)"
+        else
+            resolve_cli_mounts claude @anthropic-ai/claude-code CLAUDE_CLI_MOUNT_ARGS
+        fi
     fi
 fi
 
@@ -505,20 +560,26 @@ if [[ "$MOUNT_NPM" == true ]]; then
         NPM_MOUNT_ARGS+=(-v "$host_npm_root:$mount_npm_root:ro")
         NPM_ENV_ARGS=(-e NODE_PATH="$mount_npm_root")
 
-        npm_bin_dir="$(npm bin -g 2>/dev/null || echo /usr/local/bin)"
+        # `npm bin -g` was removed in npm v9; derive the bin dir from prefix.
+        npm_prefix="$(npm prefix -g 2>/dev/null || true)"
+        npm_bin_dir="${npm_prefix:+$npm_prefix/bin}"
+        npm_bin_dir="${npm_bin_dir:-/usr/local/bin}"
         for bin_path in "$npm_bin_dir"/*; do
             [[ -f "$bin_path" || -L "$bin_path" ]] || continue
             name="$(basename "$bin_path")"
             [[ "$name" =~ ^(node|npm|npx|corepack|opencode|claude)$ ]] && continue
 
             real_bin="$(readlink -f "$bin_path")"
+            # Skip anything not actually under the npm global root (node, nvm
+            # shims, unrelated tools on PATH).
+            [[ "$real_bin" == "$host_npm_root"/* ]] || continue
             suffix="${real_bin#"$host_npm_root"}"
             mounted_bin="$mount_npm_root$suffix"
 
             wrapper="$(mktemp)"
             cat > "$wrapper" << WRAP
 #!/bin/sh
-exec node "$mounted_bin" "$@"
+exec node "$mounted_bin" "\$@"
 WRAP
             chmod +x "$wrapper"
             echo "  $name -> /usr/local/bin/$name (npm global wrapper)"
@@ -606,6 +667,7 @@ fi
 docker run -it \
     --name "$CONTAINER_NAME" \
     --tmpfs /tmp:exec,nosuid,size=1g \
+    --tmpfs /home/skip/.cache:exec,mode=1777 \
     --cap-drop=ALL \
     --security-opt=no-new-privileges \
     --memory=4g \
