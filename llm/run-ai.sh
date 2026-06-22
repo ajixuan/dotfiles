@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/skip/project"
 
 usage() {
-    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--opencode] [--claude] [--python] [--npm] [--crossplane] [--rebuild] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--opencode] [--claude] [--python] [--npm] [--crossplane] [--terraform] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
     echo "Each argument must be a git repository. By default, a clone of the repo"
     echo "at HEAD is copied into a named docker volume and mounted at"
@@ -36,6 +36,7 @@ usage() {
     echo "  --python     Mount uv (Python package manager) from the host's PATH"
     echo "  --npm        Mount npm global tools (typescript, tsx, etc.) from the host's npm global install"
     echo "  --crossplane Mount the host's crossplane CLI binary (overrides the version baked into the image)"
+    echo "  --terraform  Mount the host's terraform CLI binary"
     echo "  --rebuild    Force rebuild of the skip-code image"
     exit 1
 }
@@ -55,6 +56,7 @@ MOUNT_CLAUDE=false
 MOUNT_PYTHON=false
 MOUNT_NPM=false
 MOUNT_CROSSPLANE=false
+MOUNT_TERRAFORM=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
@@ -71,6 +73,7 @@ for arg in "$@"; do
         --python)    MOUNT_PYTHON=true ;;
         --npm)       MOUNT_NPM=true ;;
         --crossplane) MOUNT_CROSSPLANE=true ;;
+        --terraform) MOUNT_TERRAFORM=true ;;
         --rebuild)   REBUILD=true ;;
         -h|--help) usage ;;
         *)           DIRS+=("$arg") ;;
@@ -629,6 +632,20 @@ if [[ "$MOUNT_CROSSPLANE" == true ]]; then
     fi
 fi
 
+# --- Terraform CLI (opt-in via --terraform) ---
+# Bind-mount the host's terraform binary. The upstream binary is
+# statically linked, so a straight file bind-mount is sufficient.
+TERRAFORM_MOUNT_ARGS=()
+if [[ "$MOUNT_TERRAFORM" == true ]]; then
+    if command -v terraform &>/dev/null; then
+        terraform_bin="$(readlink -f "$(command -v terraform)")"
+        echo "  $terraform_bin -> /usr/local/bin/terraform (ro)"
+        TERRAFORM_MOUNT_ARGS+=(-v "$terraform_bin:/usr/local/bin/terraform:ro")
+    else
+        echo "Warning: terraform not found on host PATH. --terraform flag ignored." >&2
+    fi
+fi
+
 # Build PATH additions for Go and/or Rust. Fetch the container's default
 # PATH so toolchain binaries are discoverable without hardcoding.
 TOOLCHAIN_ENV_ARGS=()
@@ -740,5 +757,6 @@ docker run -it \
     "${PYTHON_MOUNT_ARGS[@]}" \
     "${NPM_MOUNT_ARGS[@]}" \
     "${CROSSPLANE_MOUNT_ARGS[@]}" \
+    "${TERRAFORM_MOUNT_ARGS[@]}" \
     "${MOUNT_ARGS[@]}" \
     "$IMAGE_NAME"
