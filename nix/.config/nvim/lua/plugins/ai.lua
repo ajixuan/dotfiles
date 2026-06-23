@@ -1,7 +1,7 @@
 return {
   {
     "nickjvandyke/opencode.nvim",
-    version = "*", -- Latest stable release
+    version = "*",
     keys = {
       { "<leader>oa", mode = { "n", "x" }, function() require("opencode").ask("@this: ") end, desc = "Ask opencode" },
       { "<leader>os", mode = { "n", "x" }, function() require("opencode").select() end, desc = "Execute opencode action" },
@@ -11,13 +11,11 @@ return {
     },
     dependencies = {
       {
-        -- `snacks.nvim` integration is recommended, but optional
-        ---@module "snacks" <- Loads `snacks.nvim` types for configuration intellisense
         "folke/snacks.nvim",
         optional = true,
         opts = {
-          input = {}, -- Enhances `ask()`
-          picker = { -- Enhances `select()`
+          input = {},
+          picker = {
             actions = {
               opencode_send = function(...) return require("opencode").snacks_picker_send(...) end,
             },
@@ -33,14 +31,12 @@ return {
       },
     },
     config = function()
-      ---@type opencode.Opts
       vim.g.opencode_opts = {
         server = {
           start = false,
         },
       }
-
-      vim.o.autoread = true -- Required for `opts.events.reload`
+      vim.o.autoread = true
     end,
   },
   {
@@ -53,13 +49,12 @@ return {
     opts = {
       log_level = "DEBUG",
       send_code = false,
-      interactions =  {
+      interactions = {
         chat = {
           adapter = {
             name = "opencode_deepseek"
           }
         }
-
       }
     },
     config = function()
@@ -109,10 +104,26 @@ return {
                 },
               })
             end,
+            openrouter = function()
+              return require("codecompanion.adapters").extend("openai", {
+                name = "openrouter",
+                formatted_name = "OpenRouter",
+                features = {
+                  text = true,
+                  tokens = true,
+                  vision = false,
+                },
+                env = {
+                  url = "https://openrouter.ai",
+                  api_key = "cmd: echo $OPENROUTER_API_KEY",
+                  chat_url = "/api/v1/chat/completions",
+                  model = "anthropic/claude-3.5-sonnet",
+                },
+              })
+            end,
           }
         },
       })
     end
   }
 }
-

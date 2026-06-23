@@ -78,8 +78,13 @@ return {
   },
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "main",
     event = { "BufReadPost", "BufNewFile" },
     build = ":TSUpdate",
+    opts = {
+      highlight = { enable = true },
+      indent = { enable = true },
+    },
     dependencies = {
       'OXY2DEV/markview.nvim',
     },
@@ -88,7 +93,7 @@ return {
     -- We cannot use opts here, because someone decided to call config configs
     -- so the only way is to call configs explicitly in config function
     config = function()
-      require'nvim-treesitter.configs'.setup {
+      require'nvim-treesitter.config'.setup {
         -- A list of parser names, or "all" (the listed parsers MUST always be installed)
         ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "hcl", "terraform", "bash", "python", "helm", "yaml"  },
 
@@ -113,11 +118,13 @@ return {
           -- disable highlighting for the `tex` filetype, you need to include `latex` in this list as this is
           -- the name of the parser)
           -- list of language that will be disabled
-          disable = { "c", "rust" },
-          -- Or use a function for more flexibility, e.g. to disable slow treesitter highlight for large files
           disable = function(lang, buf)
+              local disabled_langs = { "c", "rust" }
+              if vim.tbl_contains(disabled_langs, lang) then
+                  return true
+              end
               local max_filesize = 100 * 1024 -- 100 KB
-              local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
+              local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(buf))
               if ok and stats and stats.size > max_filesize then
                   return true
               end
