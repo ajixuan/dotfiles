@@ -3,5 +3,8 @@ return {
     'nvim-telescope/telescope.nvim',
      dependencies = { 'nvim-lua/plenary.nvim' }
   },
-  { "junegunn/fzf", build = "./install --all" },
+  {
+    "junegunn/fzf",
+    build = "./install --all"
+  },
 }
