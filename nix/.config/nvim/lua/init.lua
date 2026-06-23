@@ -1,4 +1,3 @@
-require("config.splash")
 require("config.lazy")
 require("config.telescope")
 require("config.diagnostic")
