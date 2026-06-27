@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && chmod -R a+rwX /home/skip \
     && echo "alias g='git'" >> /home/skip/.bashrc \
     && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/skip/.bashrc \
+    && echo "alias ocode='opencode serve --port 4096'" >> /home/skip/.bashrc \
     && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/skip/.bashrc \
     && chown skip:skip /home/skip/.bashrc
 

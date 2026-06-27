@@ -37,6 +37,9 @@ usage() {
     echo "  --npm        Mount npm global tools (typescript, tsx, etc.) from the host's npm global install"
     echo "  --crossplane Mount the host's crossplane CLI binary (overrides the version baked into the image)"
     echo "  --terraform  Mount the host's terraform CLI binary"
+    echo "  --keys       Load API keys from $KEYS_DIR (default: $HOME/ki)."
+    echo "               Each .gpg file is decrypted and loaded as an env var"
+    echo "               named after the file (lowercase filename -> UPPERCASE env var)."
     echo "  --rebuild    Force rebuild of the skip-code image"
     exit 1
 }
@@ -57,6 +60,7 @@ MOUNT_PYTHON=false
 MOUNT_NPM=false
 MOUNT_CROSSPLANE=false
 MOUNT_TERRAFORM=false
+LOAD_KEYS=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
@@ -75,6 +79,7 @@ for arg in "$@"; do
         --crossplane) MOUNT_CROSSPLANE=true ;;
         --terraform) MOUNT_TERRAFORM=true ;;
         --rebuild)   REBUILD=true ;;
+        --keys)      LOAD_KEYS=true ;;
         -h|--help) usage ;;
         *)           DIRS+=("$arg") ;;
     esac
@@ -505,6 +510,10 @@ OPENCODE_CLI_MOUNT_ARGS=()
 if [[ "$MOUNT_OPENCODE" == true ]]; then
     resolve_cli_mounts opencode opencode-ai OPENCODE_CLI_MOUNT_ARGS
 fi
+OPENCODE_PORT_ARGS=()
+if [[ "$MOUNT_OPENCODE" == true ]]; then
+    OPENCODE_PORT_ARGS=(-p 4096:4096)
+fi
 
 # --- Claude Code CLI (opt-in via --claude) ---
 # The official installer (claude.ai/install.sh) stores the binary at
@@ -720,6 +729,15 @@ if [[ "$START_POSTGRES" == true ]]; then
     )
 fi
 
+# --- GPG-encrypted API keys (opt-in via --keys) ---
+KEY_ENV_ARGS=()
+if [[ "$LOAD_KEYS" == true ]]; then
+  KEYS_DIR="${KEYS_DIR:-$HOME/ki}"
+  while IFS="=" read -r name value; do
+    echo "  $name from $KEYS_DIR/${name,,}.gpg"
+    KEY_ENV_ARGS+=(-e "$name=$value")
+  done < <("$SCRIPT_DIR/load_keys.sh")
+fi
 docker run -it \
     --name "$CONTAINER_NAME" \
     --tmpfs /tmp:exec,nosuid,size=1g \
@@ -742,6 +760,7 @@ docker run -it \
     "${USERNS_ARGS[@]}" \
     "${HOME_MOUNT_ARGS[@]}" \
     "${POSTGRES_ENV_ARGS[@]}" \
+    "${KEY_ENV_ARGS[@]}" \
     "${GITCONFIG_ENV_ARGS[@]}" \
     "${NETWORK_ARGS[@]}" \
     "${AZURE_MOUNT_ARGS[@]}" \
@@ -753,6 +772,7 @@ docker run -it \
     "${GO_MOUNT_ARGS[@]}" \
     "${RUST_MOUNT_ARGS[@]}" \
     "${OPENCODE_CLI_MOUNT_ARGS[@]}" \
+    "${OPENCODE_PORT_ARGS[@]}" \
     "${CLAUDE_CLI_MOUNT_ARGS[@]}" \
     "${PYTHON_MOUNT_ARGS[@]}" \
     "${NPM_MOUNT_ARGS[@]}" \
