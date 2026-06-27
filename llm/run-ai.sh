@@ -738,6 +738,7 @@ if [[ "$LOAD_KEYS" == true ]]; then
     KEY_ENV_ARGS+=(-e "$name=$value")
   done < <("$SCRIPT_DIR/load_keys.sh")
 fi
+
 docker run -it \
     --name "$CONTAINER_NAME" \
     --tmpfs /tmp:exec,nosuid,size=1g \
