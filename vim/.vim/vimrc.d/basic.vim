@@ -211,6 +211,13 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
+" Resize windows (by 3 lines/cols at a time)
+nnoremap <C-Up>    3<C-w>+
+nnoremap <C-Down>  3<C-w>-
+nnoremap <C-Left>  3<C-w><
+nnoremap <C-Right> 3<C-w>>
+nnoremap <leader>= <C-w>=
+
 " Opens a new tab with the current buffer's path
 " Super useful when editing files in the same directory
 map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
