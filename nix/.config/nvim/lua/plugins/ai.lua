@@ -61,14 +61,6 @@ return {
       require("codecompanion").setup({
         adapters = {
           http = {
-            copilot = function()
-              return require("codecompanion.adapters").extend("copilot", {
-                name = "copilot",
-                env = {
-                  api_key = "cmd: gpg --batch --quiet --decrypt ../llms/copilot.gpg"
-                },
-              })
-            end,
             venice = function()
               return require("codecompanion.adapters").extend("deepseek", {
                 name = "venice",
@@ -124,6 +116,11 @@ return {
           }
         },
       })
+
+      -- Global keymaps
+      vim.keymap.set({ "n", "v" }, "<leader>cc", "<cmd>CodeCompanionChat Toggle<cr>", { desc = "CodeCompanion Chat" })
+      vim.keymap.set({ "n", "v" }, "<leader>ca", "<cmd>CodeCompanionActions<cr>", { desc = "CodeCompanion Actions" })
+      vim.keymap.set("v", "<leader>ce", "<cmd>CodeCompanion<cr>", { desc = "CodeCompanion Inline" })
     end
   }
 }
