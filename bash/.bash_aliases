@@ -18,4 +18,4 @@ alias dotfiles='/usr/bin/git -C "${HOME}/.dotfiles/"'
 alias gbrm='git branch | grep -vE "main|master" | xargs git branch -D'
 alias goclean='go clean -cache -modcache -testcache -fuzzcache'
 alias npmclean='npm cache clean --force'
-
+alias dush='sudo du -h --max-depth=1 ./ | sort -h'
