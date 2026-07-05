@@ -555,6 +555,24 @@ WRAP
     fi
 fi
 
+# --- Claude Code config dir (opt-in via --claude) ---
+# Mounts the claude config from dotfiles into ~/.claude so settings,
+# hooks, permissions, etc. are available inside the container.
+CLAUDE_CONFIG_MOUNT_ARGS=()
+if [[ "$MOUNT_CLAUDE" == true ]]; then
+    CLAUDE_CONFIG_VOLUME="$(docker volume create)"
+    SESSION_VOLUMES+=("$CLAUDE_CONFIG_VOLUME")
+
+    CLAUDE_DIR="$SCRIPT_DIR/claude"
+    if [[ -d "$CLAUDE_DIR" ]] && [[ -n "$(ls -A "$CLAUDE_DIR" 2>/dev/null)" ]]; then
+        tar -C "$CLAUDE_DIR" -cf - . \
+            | populate_volume_from_tar "$CLAUDE_CONFIG_VOLUME" \
+                "tar -xf - -C /dst"
+    fi
+
+    CLAUDE_CONFIG_MOUNT_ARGS=(-v "$CLAUDE_CONFIG_VOLUME:/home/skip/.claude")
+fi
+
 # --- Python / uv (opt-in via --python) ---
 # Mount the host's uv binary (Python package manager). The container
 # already has python3 from apt; uv adds fast package management.
@@ -775,6 +793,7 @@ docker run -it \
     "${OPENCODE_CLI_MOUNT_ARGS[@]}" \
     "${OPENCODE_PORT_ARGS[@]}" \
     "${CLAUDE_CLI_MOUNT_ARGS[@]}" \
+    "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \
     "${PYTHON_MOUNT_ARGS[@]}" \
     "${NPM_MOUNT_ARGS[@]}" \
     "${CROSSPLANE_MOUNT_ARGS[@]}" \

@@ -15,3 +15,7 @@ alias dang='docker rmi $(docker images -f "dangling=true" -q)'
 alias note="grep $(date +%d%m%Y) ${HOME}/ajichangelog.md || echo $(date +%d%m%Y) >> ${HOME}/ajichangelog.md && vi ${HOME}/ajichangelog.md"
 alias todo="grep $(date +%d%m%Y) ${HOME}/todo.md || echo $(date +%d%m%Y) >> ${HOME}/todo.md && vi ${HOME}/todo.md"
 alias dotfiles='/usr/bin/git -C "${HOME}/.dotfiles/"'
+alias gbrm='git branch | grep -vE "main|master" | xargs git branch -D'
+alias goclean='go clean -cache -modcache -testcache -fuzzcache'
+alias npmclean='npm cache clean --force'
+
