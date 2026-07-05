@@ -573,6 +573,20 @@ if [[ "$MOUNT_CLAUDE" == true ]]; then
     CLAUDE_CONFIG_MOUNT_ARGS=(-v "$CLAUDE_CONFIG_VOLUME:/home/skip/.claude")
 fi
 
+# --- Bash config files ---
+# Bind-mount .bashrc / .bash_aliases from the host read-only. Named volumes
+# can't have their subpaths mounted via `-v volume/file:target` (Docker parses
+# the whole string as a volume name and rejects the `/`), and these files
+# don't need writability inside the container. World-readable (644) perms
+# mean even a userns-remapped container UID can read them.
+BASH_CONFIG_MOUNT_ARGS=()
+if [[ -f "$HOME/.bashrc" ]]; then
+    BASH_CONFIG_MOUNT_ARGS+=(-v "$HOME/.bashrc:/home/skip/.bashrc:ro")
+fi
+if [[ -f "$HOME/.bash_aliases" ]]; then
+    BASH_CONFIG_MOUNT_ARGS+=(-v "$HOME/.bash_aliases:/home/skip/.bash_aliases:ro")
+fi
+
 # --- Python / uv (opt-in via --python) ---
 # Mount the host's uv binary (Python package manager). The container
 # already has python3 from apt; uv adds fast package management.
@@ -794,6 +808,7 @@ docker run -it \
     "${OPENCODE_PORT_ARGS[@]}" \
     "${CLAUDE_CLI_MOUNT_ARGS[@]}" \
     "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \
+    "${BASH_CONFIG_MOUNT_ARGS[@]}" \
     "${PYTHON_MOUNT_ARGS[@]}" \
     "${NPM_MOUNT_ARGS[@]}" \
     "${CROSSPLANE_MOUNT_ARGS[@]}" \
