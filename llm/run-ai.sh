@@ -574,17 +574,19 @@ if [[ "$MOUNT_CLAUDE" == true ]]; then
 fi
 
 # --- Bash config files ---
-# Bind-mount .bashrc / .bash_aliases from the host read-only. Named volumes
-# can't have their subpaths mounted via `-v volume/file:target` (Docker parses
-# the whole string as a volume name and rejects the `/`), and these files
-# don't need writability inside the container. World-readable (644) perms
-# mean even a userns-remapped container UID can read them.
+# Bind-mount .bashrc / .bash_aliases from the host read-only as .bashrc.home
+# / .bash_alias.home so the image's own .bashrc (which sources them) stays
+# intact. Named volumes can't have their subpaths mounted via
+# `-v volume/file:target` (Docker parses the whole string as a volume name
+# and rejects the `/`), and these files don't need writability inside the
+# container. World-readable (644) perms mean even a userns-remapped
+# container UID can read them.
 BASH_CONFIG_MOUNT_ARGS=()
 if [[ -f "$HOME/.bashrc" ]]; then
-    BASH_CONFIG_MOUNT_ARGS+=(-v "$HOME/.bashrc:/home/skip/.bashrc:ro")
+    BASH_CONFIG_MOUNT_ARGS+=(-v "$HOME/.bashrc:/home/skip/.bashrc.home:ro")
 fi
 if [[ -f "$HOME/.bash_aliases" ]]; then
-    BASH_CONFIG_MOUNT_ARGS+=(-v "$HOME/.bash_aliases:/home/skip/.bash_aliases:ro")
+    BASH_CONFIG_MOUNT_ARGS+=(-v "$HOME/.bash_aliases:/home/skip/.bash_alias.home:ro")
 fi
 
 # --- Python / uv (opt-in via --python) ---

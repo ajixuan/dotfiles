@@ -31,10 +31,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && groupmod -n skip node \
     && usermod -l skip -d /home/skip -m node \
     && chmod -R a+rwX /home/skip \
-    && echo "alias g='git'" >> /home/skip/.bashrc \
     && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/skip/.bashrc \
     && echo "alias ocode='opencode serve --port 4096'" >> /home/skip/.bashrc \
     && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/skip/.bashrc \
+    && echo "[ -f ~/.bashrc.home ] && . ~/.bashrc.home" >> /home/skip/.bashrc \
+    && echo "[ -f ~/.bash_alias.home ] && . ~/.bash_alias.home" >> /home/skip/.bashrc \
     && chown skip:skip /home/skip/.bashrc
 
 USER skip
