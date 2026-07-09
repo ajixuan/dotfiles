@@ -19,7 +19,10 @@ usage() {
     echo "               of cloning into a volume. Edits inside the container"
     echo "               affect the host repo immediately; no extraction needed."
     echo "               Uses --userns=host so container UID matches host UID."
-    echo "  --kube       Mount kubeconfig into the container"
+    echo "  --kube[=PATH]"
+    echo "               Mount kubeconfig into the container. Defaults to"
+    echo "               \$KUBECONFIG (first existing entry if colon-list) or"
+    echo "               ~/.kube/infra-config. Pass --kube=/some/path to override."
     echo "  --azure      Mount Azure CLI credentials into the container"
     echo "  --gitconfig  Mount ~/.gitconfig into the container"
     echo "  --memory     Persist per-project memory dirs across runs by"
@@ -46,6 +49,7 @@ usage() {
 
 # Parse flags
 MOUNT_KUBE=false
+KUBE_PATH=""
 MOUNT_AZURE=false
 MOUNT_GITCONFIG=false
 MOUNT_MEMORY=false
@@ -66,6 +70,7 @@ for arg in "$@"; do
     case "$arg" in
         --bind)      BIND_MOUNT=true ;;
         --kube)      MOUNT_KUBE=true ;;
+        --kube=*)    MOUNT_KUBE=true; KUBE_PATH="${arg#--kube=}" ;;
         --azure)     MOUNT_AZURE=true ;;
         --gitconfig) MOUNT_GITCONFIG=true ;;
         --memory)    MOUNT_MEMORY=true ;;
@@ -354,19 +359,39 @@ if [[ "$MOUNT_AZURE" == true ]]; then
     fi
 fi
 
-# --- Kubeconfig (opt-in via --kube) ---
+# --- Kubeconfig (opt-in via --kube[=PATH]) ---
+# Source resolution priority:
+#   1. --kube=PATH argument (explicit override)
+#   2. $KUBECONFIG env var (first existing entry if colon-list)
+#   3. ~/.kube/infra-config (default)
+# The file lands at /home/skip/.kube/config inside the container so kubectl's
+# default lookup finds it without needing a KUBECONFIG env var.
 KUBE_MOUNT_ARGS=()
 if [[ "$MOUNT_KUBE" == true ]]; then
-    KUBECONFIG_SRC="${KUBECONFIG:-$HOME/.kube/infra-config}"
+    KUBECONFIG_SRC=""
+    if [[ -n "$KUBE_PATH" ]]; then
+        KUBECONFIG_SRC="$KUBE_PATH"
+    elif [[ -n "${KUBECONFIG:-}" ]]; then
+        IFS=':' read -ra kube_paths <<< "$KUBECONFIG"
+        for p in "${kube_paths[@]}"; do
+            if [[ -f "$p" ]]; then
+                KUBECONFIG_SRC="$p"
+                break
+            fi
+        done
+    else
+        KUBECONFIG_SRC="$HOME/.kube/infra-config"
+    fi
     if [[ -f "$KUBECONFIG_SRC" ]]; then
         KUBE_VOLUME="$(docker volume create)"
         SESSION_VOLUMES+=("$KUBE_VOLUME")
         cat "$KUBECONFIG_SRC" \
             | populate_volume_from_tar "$KUBE_VOLUME" \
-                "cat > /dst/infra-config && chmod 600 /dst/infra-config"
+                "cat > /dst/config && chmod 600 /dst/config"
         KUBE_MOUNT_ARGS=(-v "$KUBE_VOLUME:/home/skip/.kube")
+        echo "  $KUBECONFIG_SRC -> /home/skip/.kube/config"
     else
-        echo "Warning: Kubeconfig '$KUBECONFIG_SRC' not found. kubectl may not work." >&2
+        echo "Warning: kubeconfig '$KUBECONFIG_SRC' not found. kubectl may not work." >&2
     fi
 fi
 
