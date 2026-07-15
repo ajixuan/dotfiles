@@ -331,7 +331,17 @@ if [[ "$MOUNT_AZURE" == true ]]; then
     if [[ -d "$AZURE_DIR" ]]; then
         AZURE_VOLUME="$(docker volume create)"
         SESSION_VOLUMES+=("$AZURE_VOLUME")
-        tar -C "$AZURE_DIR" -cf - . \
+        # Exclude volatile subdirs the az CLI writes to while running
+        # (commands/, logs/, telemetry/). A concurrent `az` invocation
+        # rotates files under commands/ mid-walk, tripping tar with EACCES
+        # on a file that gets unlinked between readdir and open. These
+        # dirs also aren't needed for auth inside the container.
+        tar -C "$AZURE_DIR" \
+            --exclude=./commands \
+            --exclude=./logs \
+            --exclude=./telemetry \
+            --ignore-failed-read \
+            -cf - . \
             | populate_volume_from_tar "$AZURE_VOLUME" \
                 "tar -xf - -C /dst && chmod -R u+rwX,go-rwx /dst"
         AZURE_MOUNT_ARGS=(-v "$AZURE_VOLUME:/home/skip/.azure")
