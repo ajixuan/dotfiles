@@ -26,6 +26,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
        -o /tmp/kubelogin.zip \
     && unzip -j /tmp/kubelogin.zip "bin/linux_$(dpkg --print-architecture)/kubelogin" -d /usr/local/bin \
     && rm /tmp/kubelogin.zip \
+    && GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | jq -r .tag_name | sed 's/^v//') \
+    && curl -fsSL --retry 3 --http1.1 \
+       "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_$(dpkg --print-architecture).tar.gz" \
+       -o /tmp/gh.tar.gz \
+    && tar -xzf /tmp/gh.tar.gz -C /tmp \
+    && mv "/tmp/gh_${GH_VERSION}_linux_$(dpkg --print-architecture)/bin/gh" /usr/local/bin/gh \
+    && rm -rf /tmp/gh.tar.gz "/tmp/gh_${GH_VERSION}_linux_$(dpkg --print-architecture)" \
     && npm cache clean --force \
     && rm -rf /tmp/* /root/.npm /root/.cache \
     && groupmod -n skip node \
