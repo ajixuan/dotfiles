@@ -41,6 +41,7 @@ usage() {
     echo "  --crossplane Mount the host's crossplane CLI binary (overrides the version baked into the image)"
     echo "  --terraform  Mount the host's terraform CLI binary"
     echo "  --keys       Load API keys from $KEYS_DIR (default: $HOME/ki)."
+    echo "  --orouter    Decrypt ~/ki/openrouter_api_key.gpg and export OPENROUTER_API_KEY in the container"
     echo "               Each .gpg file is decrypted and loaded as an env var"
     echo "               named after the file (lowercase filename -> UPPERCASE env var)."
     echo "  --rebuild    Force rebuild of the skip-code image"
@@ -65,6 +66,7 @@ MOUNT_NPM=false
 MOUNT_CROSSPLANE=false
 MOUNT_TERRAFORM=false
 LOAD_KEYS=false
+LOAD_OROUTER=false
 DIRS=()
 for arg in "$@"; do
     case "$arg" in
@@ -85,6 +87,7 @@ for arg in "$@"; do
         --terraform) MOUNT_TERRAFORM=true ;;
         --rebuild)   REBUILD=true ;;
         --keys)      LOAD_KEYS=true ;;
+        --orouter)   LOAD_OROUTER=true ;;
         -h|--help) usage ;;
         *)           DIRS+=("$arg") ;;
     esac
@@ -545,10 +548,6 @@ OPENCODE_CLI_MOUNT_ARGS=()
 if [[ "$MOUNT_OPENCODE" == true ]]; then
     resolve_cli_mounts opencode opencode-ai OPENCODE_CLI_MOUNT_ARGS
 fi
-OPENCODE_PORT_ARGS=()
-if [[ "$MOUNT_OPENCODE" == true ]]; then
-    OPENCODE_PORT_ARGS=(-p 4096:4096)
-fi
 
 # --- Claude Code CLI (opt-in via --claude) ---
 # The official installer (claude.ai/install.sh) stores the binary at
@@ -808,6 +807,18 @@ if [[ "$LOAD_KEYS" == true ]]; then
   done < <("$SCRIPT_DIR/load_keys.sh")
 fi
 
+OROUTER_ENV_ARGS=()
+if [[ "$LOAD_OROUTER" == true ]]; then
+  OROUTER_SCRIPT="$SCRIPT_DIR/load-openrouter-key.sh"
+  if [[ -f "$OROUTER_SCRIPT" ]]; then
+    source "$OROUTER_SCRIPT"
+    OROUTER_ENV_ARGS=(-e "OPENROUTER_API_KEY=$OPENROUTER_API_KEY")
+    echo "  OPENROUTER_API_KEY from ~/ki/openrouter_api_key.gpg"
+  else
+    echo "Warning: $OROUTER_SCRIPT not found. --orouter ignored." >&2
+  fi
+fi
+
 docker run -it \
     --name "$CONTAINER_NAME" \
     --tmpfs /tmp:exec,nosuid,size=1g \
@@ -831,6 +842,7 @@ docker run -it \
     "${HOME_MOUNT_ARGS[@]}" \
     "${POSTGRES_ENV_ARGS[@]}" \
     "${KEY_ENV_ARGS[@]}" \
+    "${OROUTER_ENV_ARGS[@]}" \
     "${GITCONFIG_ENV_ARGS[@]}" \
     "${NETWORK_ARGS[@]}" \
     "${AZURE_MOUNT_ARGS[@]}" \
@@ -842,7 +854,6 @@ docker run -it \
     "${GO_MOUNT_ARGS[@]}" \
     "${RUST_MOUNT_ARGS[@]}" \
     "${OPENCODE_CLI_MOUNT_ARGS[@]}" \
-    "${OPENCODE_PORT_ARGS[@]}" \
     "${CLAUDE_CLI_MOUNT_ARGS[@]}" \
     "${CLAUDE_CONFIG_MOUNT_ARGS[@]}" \
     "${BASH_CONFIG_MOUNT_ARGS[@]}" \
