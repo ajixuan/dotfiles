@@ -17,10 +17,15 @@ export PATH=$PATH:$HOME/.local/bin
 export PATH=$PATH:$HOME/bin
 export PATH=$PATH:$GOPATH/bin
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+export PATH="$PATH:$HOME/kubectl-plugins/"
 export FZF_CTRL_R_OPTS='--sort --exact'
 export FZF_DEFAULT_OPTS='--height 30%'
 export WORKON_HOME="${HOME}/.virtualenvs"
 export VIRTUALENV_WRAPPER_PATH="$HOME/.local/bin/virtualenvwrapper.sh"
+export ANTHROPIC_FOUNDRY_RESOURCE=ia-foundry-coding-prod-eus2
+export CLAUDE_CODE_USE_FOUNDRY=1
+export AZURE_TOKEN_CREDENTIALS=dev
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 # Default github user and email
 FULL_NAME="Allen Ji"
@@ -55,7 +60,7 @@ done < <(find "${HOME}/.bashrc.d/" -type f -perm -g-xw,o-xw -user "${USER}" -pri
 [ -f "${VIRTUALENV_WRAPPER_PATH:-}" ] && . "${VIRTUALENV_WRAPPER_PATH}"
 
 # Start ssh-agent
-start-ssh-agent
+#start-ssh-agent
 
 #Color
 if [[ $- == *i* ]]; then
@@ -80,6 +85,17 @@ done
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 PATH=${PATH}:/home/aji/local_builds/usr/local/bin
 
-# opencode
 export PATH=/home/aji/.opencode/bin:$PATH
 . "$HOME/.cargo/env"
+. "/home/aji/local_builds/usr/local/cargo/env"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# opencode
+export PATH=/home/aji/.opencode/bin:$PATH
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
