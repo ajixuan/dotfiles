@@ -9,7 +9,7 @@ return {
         -- Buffer
         map('n', 'gd', vim.lsp.buf.definition, {desc ='[LSP] Go to Definition'})
         map('n', 'gD', vim.lsp.buf.declaration, {desc ='[LSP] Go to Declaration'})
-        map('n', 'gr', vim.lsp.buf.references, {desc = '[LSP] References'})
+        map('n', 'gr', function() require('telescope.builtin').lsp_references() end, {desc = '[LSP] References'})
         map("n", "<leader>D", vim.lsp.buf.type_definition, { desc = "Go to type definition"})
       end
 

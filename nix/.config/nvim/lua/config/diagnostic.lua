@@ -1,2 +1,5 @@
 vim.diagnostic.config({virtual_text = true})
 vim.keymap.set('n', '<leader>go', vim.diagnostic.open_float, { desc = 'Open floating diagnostic window' })
+vim.keymap.set('n', '<leader>gh', function()
+  vim.diagnostic.enable(not vim.diagnostic.is_enabled())
+end, { desc = 'Toggle diagnostics' })
