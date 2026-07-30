@@ -34,10 +34,21 @@ return {
     },
 
     config = function()
-      -- dap configs
       local dap = require('dap')
       local dapui = require('dapui')
 
+      -- Breakpoint / stopped-line signs
+      vim.fn.sign_define('DapBreakpoint',          { text = '●', texthl = 'DiagnosticError', linehl = '', numhl = '' })
+      vim.fn.sign_define('DapBreakpointCondition', { text = '◆', texthl = 'DiagnosticWarn',  linehl = '', numhl = '' })
+      vim.fn.sign_define('DapLogPoint',            { text = '◆', texthl = 'DiagnosticInfo',  linehl = '', numhl = '' })
+      vim.fn.sign_define('DapStopped',             { text = '▶', texthl = 'DiagnosticOk',    linehl = 'Visual', numhl = '' })
+      vim.fn.sign_define('DapBreakpointRejected',  { text = '○', texthl = 'DiagnosticHint',  linehl = '', numhl = '' })
+
+      -- Inline variable values while stepping
+      require('nvim-dap-virtual-text').setup({
+        commented = true,
+        virt_text_pos = 'eol',
+      })
 
       -- Golang
       require('dap-go').setup({
@@ -59,9 +70,6 @@ return {
         }
       })
 
-
-
-
       -- Auto-open dapui on debug session start
       dapui.setup()
       dap.listeners.before.attach.dapui_config = function() dapui.open() end
@@ -76,61 +84,85 @@ return {
         "mfussenegger/nvim-dap"
       },
       keys = {
-        { "<Leader>dt", function() require("dap-python").test_method({
-          config = {
-            justMyCode = false,
-          }
-        }) end, { desc = "Debug nearest test method" }},
+        { "<Leader>dt", function() require("dap-python").test_method({ config = { justMyCode = false } }) end, desc = "Debug nearest test method" },
+        { "<Leader>dT", function() require("dap-python").test_class({ config = { justMyCode = false } }) end,  desc = "Debug test class" },
       },
       config = function()
         local dap = require('dap')
+
         local resolve_python = function()
           local venv = os.getenv("VIRTUAL_ENV")
-          local python_path = venv and (venv .. "/bin/python") or "python3"
-          return python_path
+          if venv then return venv .. "/bin/python" end
+          local cwd = vim.fn.getcwd()
+          for _, path in ipairs({ cwd .. "/.venv/bin/python", cwd .. "/venv/bin/python" }) do
+            if vim.fn.executable(path) == 1 then return path end
+          end
+          return vim.fn.exepath("python3")
         end
 
-        require("dap-python").setup(resolve_python())
-        require("dap-python").test_runner = 'unittest'
+        -- Dedicated debugpy runtime (installed via `pipx install debugpy`).
+        -- This decouples debugpy from the project venv — the config's `pythonPath`
+        -- still controls which interpreter actually runs the target code.
+        local debugpy_python = vim.fn.expand("~/.local/share/pipx/venvs/debugpy/bin/python")
+        if vim.fn.executable(debugpy_python) ~= 1 then
+          debugpy_python = resolve_python()
+        end
+        require("dap-python").setup(debugpy_python)
+        require("dap-python").test_runner = 'pytest'
 
-        table.insert(dap.configurations.python, 1, {
-            type = 'python';
-            request = 'launch';
-            name = "Test Discover";
-            module = "unittest";
-            args = {"-v", "discover"};
-            pythonPath = resolve_python;
-        })
+        -- Common launch defaults
+        local base = {
+          type = 'python',
+          request = 'launch',
+          cwd = "${workspaceFolder}",
+          pythonPath = resolve_python,
+          justMyCode = false,
+          console = "integratedTerminal",
+        }
+        local function launch(overrides)
+          return vim.tbl_extend("force", base, overrides)
+        end
 
-        table.insert(dap.configurations.python, 1, {
-            type = 'python';
-            request = 'launch';
-            name = "Test File";
-            module = "unittest";
-            args = {"-v", "${file}"};
-            pythonPath = resolve_python;
-        })
-
-        table.insert(dap.configurations.python, 1, {
-            type = 'python';
-            request = 'launch';
-            name = "Launch file with args";
-            program = "${file}";
+        dap.configurations.python = {
+          launch({ name = "Launch file",           program = "${file}" }),
+          launch({
+            name = "Launch file with args",
+            program = "${file}",
+            args = function() return vim.fn.split(vim.fn.input("Args: ")) end,
+          }),
+          launch({
+            name = "Launch module",
+            module = function() return vim.fn.input("Module: ") end,
+          }),
+          launch({ name = "Pytest: current file",  module = "pytest", args = { "-v", "${file}" } }),
+          launch({
+            name = "Pytest: with filter",
+            module = "pytest",
             args = function()
-              return vim.fn.split(vim.fn.input("Args: "))
+              local k = vim.fn.input("Pytest -k filter: ")
+              return { "-v", "-k", k, "${file}" }
             end,
-            cwd = "${workspaceFolder}",
-            pythonPath = resolve_python;
-        })
-
-        table.insert(dap.configurations.python, 1, {
-            type = 'python';
-            request = 'launch';
-            name = "Launch file";
-            program = "${file}";
-            pythonPath = resolve_python;
-        })
+          }),
+          {
+            type = 'python',
+            request = 'attach',
+            name = "Remote Attach (debugpy)",
+            connect = function()
+              local host = vim.fn.input("Host [127.0.0.1]: ")
+              local port = tonumber(vim.fn.input("Port [5678]: ")) or 5678
+              return { host = host ~= "" and host or "127.0.0.1", port = port }
+            end,
+            pathMappings = {
+              {
+                localRoot = "${workspaceFolder}",
+                remoteRoot = function()
+                  return vim.fn.input("Remote workspace root: ", "/app", "file")
+                end,
+              },
+            },
+            justMyCode = false,
+          },
+        }
       end
-
   }
 }

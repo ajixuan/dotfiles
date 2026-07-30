@@ -13,7 +13,6 @@ return {
         map("n", "<leader>D", vim.lsp.buf.type_definition, { desc = "Go to type definition"})
       end
 
-      vim.lsp.enable('gopls')
       vim.lsp.config('gopls', {
         on_attach = on_attach,
         settings = {
@@ -26,8 +25,8 @@ return {
           }
         }
       })
+      vim.lsp.enable('gopls')
 
-      vim.lsp.enable('pyright')
       vim.lsp.config('pyright', {
         on_attach = on_attach,
         settings = {
@@ -36,8 +35,8 @@ return {
          }
         }
       })
+      vim.lsp.enable('pyright')
 
-      vim.lsp.enable('tsserver')
       vim.lsp.config('tsserver', {
         cmd = {'typescript-language-server', '--stdio'},
         filetypes = { 'typescript' },
@@ -45,6 +44,7 @@ return {
         on_attach = on_attach,
         capabilities = capabilities,
       })
+      vim.lsp.enable('tsserver')
 
     end,
   },
@@ -95,7 +95,7 @@ return {
     config = function()
       require'nvim-treesitter'.setup {
         -- A list of parser names, or "all" (the listed parsers MUST always be installed)
-        ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "hcl", "terraform", "bash", "python", "helm", "yaml"  },
+        ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "hcl", "terraform", "bash", "python", "helm", "yaml", "javascript", "typescript", "tsx" },
 
         -- Install parsers synchronously (only applied to `ensure_installed`)
         sync_install = false,
@@ -104,7 +104,7 @@ return {
         auto_install = true,
 
         -- List of parsers to ignore installing (or "all")
-        ignore_install = { "javascript" },
+        ignore_install = {},
 
         -- Directory to install parsers and queries to (prepended to `runtimepath` to have priority)
         install_dir = vim.fn.stdpath('data') .. '/site',

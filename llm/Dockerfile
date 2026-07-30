@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && chmod -R a+rwX /home/skip \
     && echo "alias clawde='claude --dangerously-skip-permissions'" >> /home/skip/.bashrc \
     && echo "export LD_PRELOAD=/usr/lib/libucontext.so.1" >> /home/skip/.bashrc \
+    && echo "export GH_CONFIG_DIR=\$HOME/.gh" >> /home/skip/.bashrc \
     && echo "[ -f ~/.bashrc.home ] && . ~/.bashrc.home" >> /home/skip/.bashrc \
     && echo "[ -f ~/.bash_alias.home ] && . ~/.bash_alias.home" >> /home/skip/.bashrc \
     && chown skip:skip /home/skip/.bashrc
