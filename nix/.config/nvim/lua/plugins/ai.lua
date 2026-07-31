@@ -1,5 +1,11 @@
 return {
   {
+    "coder/claudecode.nvim",
+    dependencies = { "folke/snacks.nvim" },
+    config = true,
+    cmd = { "ClaudeCode", "ClaudeCodeFocus", "ClaudeCodeSend", "ClaudeCodeDiffAccept", "ClaudeCodeDiffDeny" },
+  },
+  {
     "nickjvandyke/opencode.nvim",
     version = "*",
     keys = {

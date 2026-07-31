@@ -46,6 +46,15 @@ return {
       })
       vim.lsp.enable('tsserver')
 
+      vim.lsp.config('terraformls', {
+        cmd = { 'terraform-ls', 'serve' },
+        filetypes = { 'terraform', 'terraform-vars', 'hcl' },
+        root_dir = vim.fs.root(0, { '.terraform', '.git' }),
+        on_attach = on_attach,
+        capabilities = capabilities,
+      })
+      vim.lsp.enable('terraformls')
+
     end,
   },
   {
@@ -90,47 +99,37 @@ return {
     },
 
     -- NOTE: nvim-treesitter API changed in May 2025
-    -- Old API: require'nvim-treesitter.configs'.setup (pre-May 2025)
-    -- New API: require'nvim-treesitter'.setup (post-May 2025)
+    -- Old API: require'nvim-treesitter.configs'.setup with ensure_installed/auto_install/highlight
+    -- New API (main branch): require'nvim-treesitter'.install({...}) and per-buffer vim.treesitter.start()
     config = function()
-      require'nvim-treesitter'.setup {
-        -- A list of parser names, or "all" (the listed parsers MUST always be installed)
-        ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline", "hcl", "terraform", "bash", "python", "helm", "yaml", "javascript", "typescript", "tsx" },
-
-        -- Install parsers synchronously (only applied to `ensure_installed`)
-        sync_install = false,
-
-        -- Automatically install missing parsers when entering buffer
-        auto_install = true,
-
-        -- List of parsers to ignore installing (or "all")
-        ignore_install = {},
-
-        -- Directory to install parsers and queries to (prepended to `runtimepath` to have priority)
-        install_dir = vim.fn.stdpath('data') .. '/site',
+      local ensure = {
+        "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline",
+        "hcl", "terraform", "bash", "python", "helm", "yaml",
+        "javascript", "typescript", "tsx",
       }
+      local missing = {}
+      for _, lang in ipairs(ensure) do
+        if #vim.api.nvim_get_runtime_file("parser/" .. lang .. ".so", false) == 0 then
+          table.insert(missing, lang)
+        end
+      end
+      if #missing > 0 then
+        pcall(vim.cmd, "TSInstall " .. table.concat(missing, " "))
+      end
 
-      -- Highlighting is now built-in to Neovim via treesitter
-      -- These custom disable rules need to be set via vim.treesitter.language
+      local disabled_langs = { c = true, rust = true }
+      local max_filesize = 100 * 1024
+
       vim.api.nvim_create_autocmd("FileType", {
         callback = function(args)
           local buf = args.buf
           local lang = vim.treesitter.language.get_lang(vim.bo[buf].filetype)
-          if not lang then return end
+          if not lang or disabled_langs[lang] then return end
 
-          -- Disable for specific languages
-          local disabled_langs = { "c", "rust" }
-          if vim.tbl_contains(disabled_langs, lang) then
-            vim.treesitter.stop(buf)
-            return
-          end
-
-          -- Disable for large files
-          local max_filesize = 100 * 1024 -- 100 KB
           local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(buf))
-          if ok and stats and stats.size > max_filesize then
-            vim.treesitter.stop(buf)
-          end
+          if ok and stats and stats.size > max_filesize then return end
+
+          pcall(vim.treesitter.start, buf, lang)
         end,
       })
     end,
