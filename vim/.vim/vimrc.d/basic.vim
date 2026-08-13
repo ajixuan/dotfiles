@@ -190,10 +190,6 @@ vnoremap L $
 " Set 0 to go to first non-space character
 map 0 ^
 
-" Move back and forth`
-nmap <leader>h :bprev<cr>
-nmap <leader>l :bnext<cr>
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Tabs, windows and buffers

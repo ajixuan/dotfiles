@@ -7,7 +7,7 @@ return {
         -- Mappings
         local map = vim.keymap.set
         -- Buffer
-        map('n', 'gd', vim.lsp.buf.definition, {desc ='[LSP] Go to Definition'})
+        map('n', 'gd', function() require('telescope.builtin').lsp_definitions() end, {desc = '[LSP] Go to Definition'})
         map('n', 'gD', vim.lsp.buf.declaration, {desc ='[LSP] Go to Declaration'})
         map('n', 'gr', function() require('telescope.builtin').lsp_references() end, {desc = '[LSP] References'})
         map("n", "<leader>D", vim.lsp.buf.type_definition, { desc = "Go to type definition"})

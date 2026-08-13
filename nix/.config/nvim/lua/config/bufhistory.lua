@@ -47,5 +47,5 @@ local function go(step)
   end
 end
 
-vim.keymap.set("n", "<leader>bb", function() go(-1) end, { desc = "Previous file (window history)" })
-vim.keymap.set("n", "<leader>bf", function() go(1) end,  { desc = "Next file (window history)" })
+vim.keymap.set("n", "<leader>h", function() go(-1) end, { desc = "Previous file (window history)" })
+vim.keymap.set("n", "<leader>l", function() go(1) end,  { desc = "Next file (window history)" })
