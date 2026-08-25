@@ -7,17 +7,27 @@ vim.keymap.set('n', '<C-p>', function()
   })
 end, { desc = 'Telescope find files (incl. hidden & ignored)' })
 
+local grep_args = {
+  '--hidden',
+  '--glob', '!**/.git/**',
+  '--glob', '!**/node_modules/**',
+  '--glob', '!**/.venv/**',
+  '--glob', '!**/.terraform/**',
+  '--glob', '!**/dist/**',
+  '--glob', '!**/build/**',
+}
+
 vim.keymap.set('n', '<leader>fg', function()
-  builtin.live_grep({ additional_args = {
-    '--hidden',
-    '--glob', '!**/.git/**',
-    '--glob', '!**/node_modules/**',
-    '--glob', '!**/.venv/**',
-    '--glob', '!**/.terraform/**',
-    '--glob', '!**/dist/**',
-    '--glob', '!**/build/**',
-  }})
+  builtin.live_grep({ additional_args = grep_args })
 end, { desc = 'Telescope live grep' })
+
+vim.keymap.set('x', '<leader>fg', function()
+  local save = vim.fn.getreginfo('z')
+  vim.cmd('silent normal! "zy')
+  local text = vim.fn.getreg('z')
+  vim.fn.setreg('z', save)
+  builtin.live_grep({ default_text = text, additional_args = grep_args })
+end, { desc = 'Telescope live grep (visual selection)' })
 
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })

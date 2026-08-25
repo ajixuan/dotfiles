@@ -3,14 +3,14 @@ return {
     'nvim-tree/nvim-tree.lua', version = "*",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     keys = {
-      { "<Tab>", function() require("nvim-tree.api").tree.toggle() end, desc = "Toggle file tree" },
+      { "<leader>tt", function() require("nvim-tree.api").tree.toggle() end, desc = "Toggle file tree" },
     },
     config = function()
       require("nvim-tree").setup {
         on_attach = function(bufnr)
           local api = require("nvim-tree.api")
           api.config.mappings.default_on_attach(bufnr)
-          vim.keymap.set("n", "<Tab>", api.tree.toggle, { buffer = bufnr, desc = "Toggle file tree" })
+          vim.keymap.set("n", "<leader>tt", api.tree.toggle, { buffer = bufnr, desc = "Toggle file tree" })
           pcall(vim.keymap.del, "n", "<C-e>", { buffer = bufnr })
           pcall(vim.keymap.del, "n", "<C-y>", { buffer = bufnr })
         end,
