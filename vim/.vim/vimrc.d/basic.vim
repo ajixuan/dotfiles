@@ -359,7 +359,7 @@ endfun
 " => Plugin Mappings
 """"""""""""""""""""""
 " nvim-tree
-nnoremap <Tab> :NvimTreeToggle<cr>
+nnoremap <leader>tt :NvimTreeToggle<cr>
 
 " markview
 nmap <C-m> :Markview Toggle<cr>
