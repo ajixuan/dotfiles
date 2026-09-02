@@ -106,6 +106,7 @@ return {
         "c", "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline",
         "hcl", "terraform", "bash", "python", "helm", "yaml",
         "javascript", "typescript", "tsx",
+        "java",
       }
       local missing = {}
       for _, lang in ipairs(ensure) do

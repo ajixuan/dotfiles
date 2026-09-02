@@ -1,0 +1,5 @@
+git:
+  paging:
+    colorArg: always
+    pager: delta --paging=never --side-by-side --width=${COLUMNS:-100} --line-numbers
+    useConfig: false
