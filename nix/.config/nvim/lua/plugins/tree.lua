@@ -15,13 +15,13 @@ return {
           pcall(vim.keymap.del, "n", "<C-y>", { buffer = bufnr })
         end,
         view = {
-          width = 20,
+          width = 40,
           preserve_window_proportions = true,
         },
-        sync_root_with_cwd = true,
+        sync_root_with_cwd = false,
         update_focused_file = {
           enable = true,
-          update_root = true,
+          update_root = false,
         },
         disable_netrw = true,
         git = {

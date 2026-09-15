@@ -3,3 +3,8 @@ git:
     colorArg: always
     pager: delta --paging=never --side-by-side --width=${COLUMNS:-100} --line-numbers
     useConfig: false
+os:
+  edit: 'nvim {{filename}}'
+  editAtLine: 'nvim +{{line}} {{filename}}'
+  editAtLineAndWait: 'nvim +{{line}} {{filename}}'
+  editInTerminal: true

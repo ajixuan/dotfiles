@@ -62,3 +62,32 @@ vim.api.nvim_create_user_command("ToggleFloatTerm", toggle_floating_terminal, {}
 vim.api.nvim_set_keymap("n", "<leader>ot", ":ToggleFloatTerm<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("t", "<leader>ot", "<C-\\><C-n>:ToggleFloatTerm<CR>", { noremap = true, silent = true })
 
+-- Fresh floating terminal cd'd to the current buffer's directory.
+local function open_floating_terminal_here()
+    local file = vim.api.nvim_buf_get_name(0)
+    local dir = (file ~= '') and vim.fn.fnamemodify(file, ':p:h') or vim.fn.getcwd()
+
+    local width = math.floor(vim.o.columns * 0.9)
+    local height = math.floor(vim.o.lines * 0.9)
+    local col = math.floor((vim.o.columns - width) / 2)
+    local row = math.floor((vim.o.lines - height) / 2)
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    local win = vim.api.nvim_open_win(buf, true, {
+        relative = "editor",
+        width = width, height = height, col = col, row = row,
+        border = "rounded", style = "minimal",
+    })
+    vim.api.nvim_win_set_option(win, 'winhighlight',
+        'NormalFloat:NormalFloat,FloatBorder:FloatBorder')
+    vim.fn.jobstart(vim.o.shell, { term = true, cwd = dir })
+    vim.cmd("startinsert")
+end
+
+vim.api.nvim_create_user_command("FloatTermHere", open_floating_terminal_here, {})
+vim.keymap.set("n", "<leader>oh", open_floating_terminal_here,
+    { desc = "Floating shell in current file's dir" })
+vim.keymap.set("t", "<leader>oh",
+    "<C-\\><C-n><cmd>FloatTermHere<CR>",
+    { desc = "Floating shell in current file's dir" })
+

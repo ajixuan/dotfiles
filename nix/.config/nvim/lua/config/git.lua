@@ -54,3 +54,16 @@ end
 
 vim.keymap.set('n', '<leader>gy', commit_url_under_cursor,
   { desc = 'Yank commit URL for hash under cursor' })
+
+local function diff_current_file()
+  local file = vim.fn.expand('%:p')
+  if file == '' then
+    vim.notify('No file in current buffer', vim.log.levels.WARN)
+    return
+  end
+  vim.cmd('botright vsplit | terminal git diff --no-ext-diff -- ' .. vim.fn.shellescape(file))
+  vim.cmd('startinsert')
+end
+
+vim.keymap.set('n', '<leader>gd', diff_current_file,
+  { desc = 'Show git diff of current file' })

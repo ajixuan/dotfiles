@@ -28,7 +28,21 @@ return {
       vim.lsp.enable('gopls')
 
       vim.lsp.config('pyright', {
-        on_attach = on_attach,
+        on_attach = function(client, bufnr)
+          on_attach(client, bufnr)
+          vim.keymap.set("n", "<leader>i", function()
+            vim.lsp.buf.code_action({
+              context = {
+                only = { "quickfix" },
+                diagnostics = vim.diagnostic.get(0, { lnum = vim.fn.line(".") - 1 }),
+              },
+              apply = true,
+              filter = function(action)
+                return action.title and action.title:lower():match("import")
+              end,
+            })
+          end, { buffer = bufnr, desc = "Python: auto-import symbol under cursor" })
+        end,
         settings = {
           python = {
             pythonPath = vim.fn.exepath("python3"),
