@@ -207,16 +207,62 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
-" Resize windows (by 3 lines/cols at a time)
-nnoremap <C-Up>    3<C-w>+
-nnoremap <C-Down>  3<C-w>-
-nnoremap <C-Left>  3<C-w><
-nnoremap <C-Right> 3<C-w>>
+" Resize windows (by 8 lines/cols at a time)
+nnoremap <C-Up>    8<C-w>+
+nnoremap <C-Down>  8<C-w>-
+nnoremap <C-Left>  8<C-w><
+nnoremap <C-Right> 8<C-w>>
 nnoremap <leader>= <C-w>=
 
 " Opens a new tab with the current buffer's path
 " Super useful when editing files in the same directory
 map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
+
+" Tab management
+nnoremap <leader>tn :tabnew<cr>
+nnoremap <leader>tc :tabclose<cr>
+nnoremap <leader>to :tabonly<cr>
+nnoremap <leader>tl :+tabmove<cr>
+nnoremap <leader>th :-tabmove<cr>
+nnoremap ]t :tabnext<cr>
+nnoremap [t :tabprevious<cr>
+nnoremap <leader>1 1gt
+nnoremap <leader>2 2gt
+nnoremap <leader>3 3gt
+nnoremap <leader>4 4gt
+nnoremap <leader>5 5gt
+nnoremap <leader>6 6gt
+nnoremap <leader>7 7gt
+nnoremap <leader>8 8gt
+nnoremap <leader>9 9gt
+
+" Move current buffer into tab N (creates the tab if it doesn't exist,
+" closes the source window if it wasn't the only one in its tab).
+function! MoveBufferToTab(n) abort
+  let l:buf = bufnr('%')
+  let l:src_wins = winnr('$')
+  while tabpagenr('$') < a:n
+    tabnew
+  endwhile
+  if l:src_wins > 1
+    close
+  endif
+  execute 'tabnext ' . a:n
+  execute 'buffer ' . l:buf
+endfunction
+
+nnoremap <leader>M1 :call MoveBufferToTab(1)<cr>
+nnoremap <leader>M2 :call MoveBufferToTab(2)<cr>
+nnoremap <leader>M3 :call MoveBufferToTab(3)<cr>
+nnoremap <leader>M4 :call MoveBufferToTab(4)<cr>
+nnoremap <leader>M5 :call MoveBufferToTab(5)<cr>
+nnoremap <leader>M6 :call MoveBufferToTab(6)<cr>
+nnoremap <leader>M7 :call MoveBufferToTab(7)<cr>
+nnoremap <leader>M8 :call MoveBufferToTab(8)<cr>
+nnoremap <leader>M9 :call MoveBufferToTab(9)<cr>
+
+" Move current buffer to a new tab appended at the end
+nnoremap <leader>tm :call MoveBufferToTab(tabpagenr('$') + 1)<cr>
 
 " Switch CWD to the directory of the open buffer
 map <leader>cd :cd %:p:h<cr>:pwd<cr>
