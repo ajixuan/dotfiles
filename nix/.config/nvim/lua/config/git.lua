@@ -55,15 +55,40 @@ end
 vim.keymap.set('n', '<leader>gy', commit_url_under_cursor,
   { desc = 'Yank commit URL for hash under cursor' })
 
-local function diff_current_file()
+local function diff_current_file(staged)
   local file = vim.fn.expand('%:p')
   if file == '' then
     vim.notify('No file in current buffer', vim.log.levels.WARN)
     return
   end
-  vim.cmd('botright vsplit | terminal git diff --no-ext-diff -- ' .. vim.fn.shellescape(file))
+  local flag = staged and '--staged ' or ''
+
+  local width = math.floor(vim.o.columns * 0.9)
+  local height = math.floor(vim.o.lines * 0.9)
+  local col = math.floor((vim.o.columns - width) / 2)
+  local row = math.floor((vim.o.lines - height) / 2)
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = 'editor',
+    width = width, height = height, col = col, row = row,
+    border = 'rounded', style = 'minimal',
+    title = staged and ' git diff --staged ' or ' git diff ',
+    title_pos = 'center',
+  })
+  vim.api.nvim_win_set_option(win, 'winhighlight',
+    'NormalFloat:NormalFloat,FloatBorder:FloatBorder')
+
+  vim.fn.jobstart(
+    'git diff --no-ext-diff ' .. flag .. '-- ' .. vim.fn.shellescape(file),
+    { term = true }
+  )
+  vim.keymap.set({ 'n', 't' }, 'q', '<cmd>close<cr>',
+    { buffer = buf, nowait = true, silent = true })
   vim.cmd('startinsert')
 end
 
-vim.keymap.set('n', '<leader>gd', diff_current_file,
+vim.keymap.set('n', '<leader>gd', function() diff_current_file(false) end,
   { desc = 'Show git diff of current file' })
+vim.keymap.set('n', '<leader>gD', function() diff_current_file(true) end,
+  { desc = 'Show git diff --staged of current file' })
