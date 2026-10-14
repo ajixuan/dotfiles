@@ -32,6 +32,14 @@ end, { desc = 'Telescope live grep (visual selection)' })
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 
+vim.keymap.set('n', '<leader>fn', function()
+  if #vim.lsp.get_clients({ bufnr = 0 }) > 0 then
+    builtin.lsp_document_symbols({ symbols = { 'function', 'method' } })
+  else
+    builtin.treesitter({ symbols = { 'function', 'method' } })
+  end
+end, { desc = 'Telescope function/method names in current buffer' })
+
 vim.keymap.set('n', '<leader>fd', function()
   builtin.diagnostics()
 end, { desc = 'Telescope workspace diagnostics' })
