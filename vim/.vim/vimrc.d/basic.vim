@@ -216,14 +216,14 @@ nnoremap <leader>= <C-w>=
 
 " Opens a new tab with the current buffer's path
 " Super useful when editing files in the same directory
-map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
+nnoremap te :tabedit <c-r>=expand("%:p:h")<cr>/
 
 " Tab management
-nnoremap <leader>tn :tabnew<cr>
-nnoremap <leader>tc :tabclose<cr>
-nnoremap <leader>to :tabonly<cr>
-nnoremap <leader>tl :+tabmove<cr>
-nnoremap <leader>th :-tabmove<cr>
+nnoremap tn :tabnew<cr>
+nnoremap tc :tabclose<cr>
+nnoremap to :tabonly<cr>
+nnoremap tl gt
+nnoremap th gT
 nnoremap ]t :tabnext<cr>
 nnoremap [t :tabprevious<cr>
 nnoremap <leader>1 1gt
@@ -247,7 +247,7 @@ function! MoveBufferToTab(n) abort
   if l:src_wins > 1
     close
   endif
-  execute 'tabnext ' . a:n
+  execute a:n . 'tabnext'
   execute 'buffer ' . l:buf
 endfunction
 
@@ -262,7 +262,7 @@ nnoremap <leader>M8 :call MoveBufferToTab(8)<cr>
 nnoremap <leader>M9 :call MoveBufferToTab(9)<cr>
 
 " Move current buffer to a new tab appended at the end
-nnoremap <leader>tm :call MoveBufferToTab(tabpagenr('$') + 1)<cr>
+nnoremap tm :call MoveBufferToTab(tabpagenr('$') + 1)<cr>
 
 " Switch CWD to the directory of the open buffer
 map <leader>cd :cd %:p:h<cr>:pwd<cr>
@@ -405,7 +405,7 @@ endfun
 " => Plugin Mappings
 """"""""""""""""""""""
 " nvim-tree
-nnoremap <leader>tt :NvimTreeToggle<cr>
+nnoremap tt :NvimTreeToggle<cr>
 
 " markview
 nmap <C-m> :Markview Toggle<cr>

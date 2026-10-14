@@ -7,6 +7,18 @@ return {
     },
     config = function()
       require('telescope').setup({
+        defaults = {
+          preview = { timeout = 150, filesize_limit = 1 },
+        },
+        pickers = {
+          live_grep = {
+            debounce = 120,
+            additional_args = function() return { '--max-columns=200' } end,
+          },
+          find_files = {
+            debounce = 60,
+          },
+        },
         extensions = {
           fzf = {
             fuzzy = true,
