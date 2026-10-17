@@ -225,40 +225,30 @@ CONTAINER_NAME="skip-code-$(date +%s)-$RANDOM"
 
 cleanup() {
     echo ""
-    echo "Session preserved. Container: $CONTAINER_NAME"
-    if [[ ${#PROJECT_VOLUMES[@]} -gt 0 ]]; then
-        echo ""
-        echo "Copy project work back to the host (runs against the exited container):"
-        for entry in "${PROJECT_VOLUMES[@]}"; do
-            IFS=$'\t' read -r vol src base <<< "$entry"
-            echo ""
-            echo "  # $base  (source: $src)"
-            echo "  DST=/path/on/host  # change this"
-            echo "  mkdir -p \"\$DST\" && docker cp $CONTAINER_NAME:$WORKDIR/$base/. \"\$DST\""
-            echo "  sudo chown -R \$(id -u):\$(id -g) \"\$DST\"   # reclaim from userns subuid"
-        done
-    fi
-    if [[ ${#PROJECT_BINDS[@]} -gt 0 ]]; then
-        echo ""
-        echo "Bind-mounted projects (changes are already on host, no extraction needed):"
-        for entry in "${PROJECT_BINDS[@]}"; do
-            IFS=$'\t' read -r src base <<< "$entry"
-            echo "  $base -> $src"
-        done
-    fi
-    echo ""
-    echo "When done, remove the container and its volumes:"
-    echo "  docker rm $CONTAINER_NAME"
+    echo "Cleaning up session..."
+
+    for entry in "${PROJECT_VOLUMES[@]}"; do
+        IFS=$'\t' read -r vol src base <<< "$entry"
+        echo "  Copying $base work back to $src"
+        docker cp "$CONTAINER_NAME:$WORKDIR/$base/." "$src" 2>/dev/null || true
+        # Reclaim ownership from container UID
+        sudo chown -R "$(id -u):$(id -g)" "$src" 2>/dev/null || true
+    done
+
+    echo "  Removing container $CONTAINER_NAME"
+    docker rm "$CONTAINER_NAME" >/dev/null 2>&1 || true
+
     if [[ ${#SESSION_VOLUMES[@]} -gt 0 ]]; then
-        echo "  docker volume rm ${SESSION_VOLUMES[*]}"
+        echo "  Removing volumes: ${SESSION_VOLUMES[*]}"
+        docker volume rm "${SESSION_VOLUMES[@]}" >/dev/null 2>&1 || true
     fi
+
     if [[ "$START_POSTGRES" == true ]]; then
-        echo ""
-        echo "Sidecar services (postgres, ...) are left running. To stop them:"
-        echo "  docker compose -f $COMPOSE_FILE down"
-        echo "To stop and wipe their data volumes as well:"
-        echo "  docker compose -f $COMPOSE_FILE down -v"
+        echo "  Stopping sidecar services"
+        docker compose -f "$COMPOSE_FILE" down -v >/dev/null 2>&1 || true
     fi
+
+    echo "Done."
 }
 trap cleanup EXIT
 
