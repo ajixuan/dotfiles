@@ -832,6 +832,7 @@ docker run -it \
     -e DEEPSEEK_API_KEY="${DEEPSEEK_API_KEY:-}" \
     -e CLAUDE_CODE_USE_FOUNDRY=1 \
     -e ANTHROPIC_FOUNDRY_RESOURCE=ia-foundry-coding-prod-eus2 \
+    -e ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-5-5 \
     -e AZURE_TOKEN_CREDENTIALS=dev \
     -e AZURE_CORE_ENCRYPT_TOKEN_CACHE=false \
     "${TOOLCHAIN_ENV_ARGS[@]}" \
