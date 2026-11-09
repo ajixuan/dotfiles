@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKDIR="/home/skip/project"
 
 usage() {
-    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--memory] [--postgres] [--go] [--rust] [--opencode] [--claude] [--python] [--npm] [--crossplane] [--terraform] [--rebuild] <repo1> [repo2] [repo3] ..."
+    echo "Usage: $0 [--bind] [--kube] [--azure] [--gitconfig] [--gh] [--memory] [--postgres] [--go] [--rust] [--opencode] [--claude] [--python] [--npm] [--crossplane] [--terraform] [--rebuild] <repo1> [repo2] [repo3] ..."
     echo ""
     echo "Each argument must be a git repository. By default, a clone of the repo"
     echo "at HEAD is copied into a named docker volume and mounted at"
@@ -25,6 +25,8 @@ usage() {
     echo "               ~/.kube/infra-config. Pass --kube=/some/path to override."
     echo "  --azure      Mount Azure CLI credentials into the container"
     echo "  --gitconfig  Mount ~/.gitconfig into the container"
+    echo "  --gh         Pass a GitHub token into the container as GH_TOKEN so gh"
+    echo "               is authenticated. Uses \$GH_TOKEN if set, else 'gh auth token'."
     echo "  --memory     Persist per-project memory dirs across runs by"
     echo "               bind-mounting ~/.skip/projects/<slug>/memory/"
     echo "               from the host. Only memory is shared — settings,"
@@ -53,6 +55,7 @@ MOUNT_KUBE=false
 KUBE_PATH=""
 MOUNT_AZURE=false
 MOUNT_GITCONFIG=false
+LOAD_GH=false
 MOUNT_MEMORY=false
 START_POSTGRES=false
 REBUILD=false
@@ -75,6 +78,7 @@ for arg in "$@"; do
         --kube=*)    MOUNT_KUBE=true; KUBE_PATH="${arg#--kube=}" ;;
         --azure)     MOUNT_AZURE=true ;;
         --gitconfig) MOUNT_GITCONFIG=true ;;
+        --gh)        LOAD_GH=true ;;
         --memory)    MOUNT_MEMORY=true ;;
         --postgres)  START_POSTGRES=true ;;
         --go)        MOUNT_GO=true ;;
@@ -809,6 +813,21 @@ if [[ "$LOAD_OROUTER" == true ]]; then
   fi
 fi
 
+# --- GitHub CLI auth (opt-in via --gh) ---
+GH_ENV_ARGS=()
+if [[ "$LOAD_GH" == true ]]; then
+  if [[ -z "${GH_TOKEN:-}" ]] && command -v gh &>/dev/null; then
+    GH_TOKEN="$(gh auth token 2>/dev/null || true)"
+  fi
+  if [[ -n "${GH_TOKEN:-}" ]]; then
+    export GH_TOKEN
+    GH_ENV_ARGS=(-e GH_TOKEN)
+    echo "  GH_TOKEN from host gh auth"
+  else
+    echo "Warning: no GitHub token found (set GH_TOKEN or run 'gh auth login'). --gh ignored." >&2
+  fi
+fi
+
 docker run -it \
     --name "$CONTAINER_NAME" \
     --tmpfs /tmp:exec,nosuid,size=1g \
@@ -834,6 +853,7 @@ docker run -it \
     "${POSTGRES_ENV_ARGS[@]}" \
     "${KEY_ENV_ARGS[@]}" \
     "${OROUTER_ENV_ARGS[@]}" \
+    "${GH_ENV_ARGS[@]}" \
     "${GITCONFIG_ENV_ARGS[@]}" \
     "${NETWORK_ARGS[@]}" \
     "${AZURE_MOUNT_ARGS[@]}" \
