@@ -92,3 +92,48 @@ vim.keymap.set('n', '<leader>gd', function() diff_current_file(false) end,
   { desc = 'Show git diff of current file' })
 vim.keymap.set('n', '<leader>gD', function() diff_current_file(true) end,
   { desc = 'Show git diff --staged of current file' })
+
+-- Full-file blame: scroll-bound side panel with one blame entry per line.
+-- Press q in the panel to close it. Inline blame comes from git-blame.nvim.
+local function blame_file()
+  local src = vim.api.nvim_get_current_buf()
+  local file = vim.api.nvim_buf_get_name(src)
+  if file == '' then return end
+  local out = vim.fn.systemlist({ 'git', '-C', vim.fn.fnamemodify(file, ':h'), 'blame',
+    '--date=short', '-w', '--', file })
+  if vim.v.shell_error ~= 0 then
+    vim.notify('git blame failed: ' .. table.concat(out, '\n'), vim.log.levels.WARN)
+    return
+  end
+  local lines, width = {}, 0
+  for _, l in ipairs(out) do
+    -- strip the trailing "<lineno>) <code>" so only the blame info remains
+    local info = l:match('^(.-)%s+%d+%) ') or l
+    info = info:gsub('%(', ''):gsub('%s+$', '')
+    lines[#lines + 1] = info
+    width = math.max(width, vim.fn.strdisplaywidth(info))
+  end
+  local src_win = vim.api.nvim_get_current_win()
+  local view = vim.fn.winsaveview()
+  vim.cmd('vertical leftabove new')
+  local buf = vim.api.nvim_get_current_buf()
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].buftype, vim.bo[buf].bufhidden = 'nofile', 'wipe'
+  vim.bo[buf].modifiable = false
+  local win = vim.api.nvim_get_current_win()
+  vim.wo[win].number, vim.wo[win].wrap, vim.wo[win].foldcolumn = false, false, '0'
+  vim.api.nvim_win_set_width(win, math.min(width + 1, 70))
+  for _, w in ipairs({ win, src_win }) do vim.wo[w].scrollbind = true end
+  vim.cmd('syncbind')
+  vim.api.nvim_win_call(win, function() vim.fn.winrestview({ topline = view.topline, lnum = view.lnum }) end)
+  vim.keymap.set('n', 'q', function()
+    vim.wo[src_win].scrollbind = false
+    vim.api.nvim_win_close(win, true)
+  end, { buffer = buf, nowait = true, silent = true })
+  vim.api.nvim_set_current_win(src_win)
+end
+
+vim.keymap.set('n', '<leader>gb', blame_file, { desc = 'Git blame every line (side panel)' })
+vim.keymap.set('n', '<leader>gi', '<cmd>GitBlameToggle<cr>', { desc = 'Toggle inline git blame' })
+vim.keymap.set('n', '<leader>gB', '<cmd>GitBlameOpenCommitURL<cr>',
+  { desc = 'Open blamed commit of current line in browser' })
