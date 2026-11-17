@@ -17,16 +17,53 @@ local grep_args = {
   '--glob', '!**/build/**',
 }
 
-vim.keymap.set('n', '<leader>fg', function()
-  builtin.live_grep({ additional_args = grep_args })
-end, { desc = 'Telescope live grep' })
+-- Live grep with exclusions: any whitespace-separated token starting with `!`
+-- excludes files/dirs whose path contains it, e.g. `foo bar !test !vendor`
+-- greps for "foo bar" while skipping paths containing "test" or "vendor".
+local function live_grep_excl(default_text)
+  local pickers    = require('telescope.pickers')
+  local finders    = require('telescope.finders')
+  local sorters    = require('telescope.sorters')
+  local conf       = require('telescope.config').values
+  local make_entry = require('telescope.make_entry')
+  local opts = { cwd = vim.loop.cwd() }
+
+  local finder = finders.new_job(function(prompt)
+    local words, args = {}, {}
+    for tok in prompt:gmatch('%S+') do
+      local ex = tok:match('^!(.+)$')
+      if ex then
+        vim.list_extend(args, { '--glob', '!**/*' .. ex .. '*', '--glob', '!**/*' .. ex .. '*/**' })
+      else
+        words[#words + 1] = tok
+      end
+    end
+    local pattern = table.concat(words, ' ')
+    if pattern == '' then return nil end
+    return vim.iter({
+      conf.vimgrep_arguments, grep_args, args, { '--max-columns=200', '--', pattern },
+    }):flatten():totable()
+  end, make_entry.gen_from_vimgrep(opts), nil, opts.cwd)
+
+  pickers.new(opts, {
+    prompt_title   = 'Live Grep (!term excludes paths)',
+    default_text   = default_text,
+    debounce       = 120,
+    finder         = finder,
+    previewer      = conf.grep_previewer(opts),
+    sorter         = sorters.highlighter_only(opts),
+  }):find()
+end
+
+vim.keymap.set('n', '<leader>fg', function() live_grep_excl() end,
+  { desc = 'Telescope live grep (!term excludes paths)' })
 
 vim.keymap.set('x', '<leader>fg', function()
   local save = vim.fn.getreginfo('z')
   vim.cmd('silent normal! "zy')
   local text = vim.fn.getreg('z')
   vim.fn.setreg('z', save)
-  builtin.live_grep({ default_text = text, additional_args = grep_args })
+  live_grep_excl(text)
 end, { desc = 'Telescope live grep (visual selection)' })
 
 vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
@@ -93,3 +130,14 @@ vim.keymap.set('n', '<leader>fF', function()
     sorter       = sorters.highlighter_only(opts),
   }):find()
 end, { desc = 'Telescope search function definition across project' })
+
+-- All function/method names across the project (fuzzy filter as you type).
+-- Uses LSP workspace symbols when a server is attached; otherwise falls back
+-- to <leader>fF (type a name to find its definition).
+vim.keymap.set('n', '<leader>fN', function()
+  if #vim.lsp.get_clients({ bufnr = 0 }) > 0 then
+    builtin.lsp_dynamic_workspace_symbols({ symbols = { 'function', 'method' } })
+  else
+    vim.notify('No LSP attached; use <leader>fF to search definitions by name', vim.log.levels.WARN)
+  end
+end, { desc = 'Telescope function/method names across project (LSP)' })
