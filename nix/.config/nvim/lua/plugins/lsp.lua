@@ -102,12 +102,8 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     branch = "main",
-    event = { "BufReadPost", "BufNewFile" },
+    lazy = false, -- main branch does not support lazy-loading
     build = ":TSUpdate",
-    opts = {
-      highlight = { enable = true },
-      indent = { enable = true },
-    },
     dependencies = {
       'OXY2DEV/markview.nvim',
     },
@@ -122,31 +118,57 @@ return {
         "javascript", "typescript", "tsx",
         "java",
       }
-      local missing = {}
-      for _, lang in ipairs(ensure) do
-        if #vim.api.nvim_get_runtime_file("parser/" .. lang .. ".so", false) == 0 then
-          table.insert(missing, lang)
-        end
-      end
-      if #missing > 0 then
-        pcall(vim.cmd, "TSInstall " .. table.concat(missing, " "))
-      end
-
       local disabled_langs = { c = true, rust = true }
       local max_filesize = 100 * 1024
 
+      local function start_ts(buf)
+        local lang = vim.treesitter.language.get_lang(vim.bo[buf].filetype)
+        if not lang or disabled_langs[lang] then return end
+
+        local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(buf))
+        if ok and stats and stats.size > max_filesize then return end
+
+        local started, err = pcall(vim.treesitter.start, buf, lang)
+        if not started then
+          vim.notify_once("treesitter highlight failed (" .. lang .. "): " .. tostring(err), vim.log.levels.WARN)
+        end
+      end
+
+      local function start_all()
+        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+          if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype ~= "" then
+            start_ts(buf)
+          end
+        end
+      end
+
       vim.api.nvim_create_autocmd("FileType", {
-        callback = function(args)
-          local buf = args.buf
-          local lang = vim.treesitter.language.get_lang(vim.bo[buf].filetype)
-          if not lang or disabled_langs[lang] then return end
-
-          local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(buf))
-          if ok and stats and stats.size > max_filesize then return end
-
-          pcall(vim.treesitter.start, buf, lang)
-        end,
+        callback = function(args) start_ts(args.buf) end,
       })
+      start_all()
+
+      -- Parsers (other than the few bundled with Neovim) are compiled locally.
+      -- Without these tools every install fails and highlighting silently
+      -- falls back to plain regex syntax, so say so loudly.
+      local needed = { "tree-sitter", "cc", "curl", "tar" }
+      local absent = vim.tbl_filter(function(exe)
+        if exe == "cc" then
+          return vim.fn.executable("cc") == 0 and vim.fn.executable("gcc") == 0 and vim.fn.executable("clang") == 0
+        end
+        return vim.fn.executable(exe) == 0
+      end, needed)
+      if #absent > 0 then
+        vim.notify("nvim-treesitter: missing " .. table.concat(absent, ", ")
+          .. " in PATH; parsers can't be installed (tree-sitter-cli >= 0.26.1, not from npm)",
+          vim.log.levels.ERROR)
+        return
+      end
+
+      -- Async; no-op for parsers already installed. Re-attach highlighting
+      -- once new parsers land so already-open buffers pick them up.
+      require("nvim-treesitter").install(ensure):await(function()
+        vim.schedule(start_all)
+      end)
     end,
   },
   {

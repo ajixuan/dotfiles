@@ -80,7 +80,7 @@ local function diff_current_file(staged)
     'NormalFloat:NormalFloat,FloatBorder:FloatBorder')
 
   vim.fn.jobstart(
-    'git diff --no-ext-diff ' .. flag .. '-- ' .. vim.fn.shellescape(file),
+    'git -c delta.side-by-side=false diff --no-ext-diff ' .. flag .. '-- ' .. vim.fn.shellescape(file),
     { term = true }
   )
   vim.keymap.set({ 'n', 't' }, 'q', '<cmd>close<cr>',

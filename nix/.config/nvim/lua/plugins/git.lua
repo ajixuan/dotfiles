@@ -34,5 +34,23 @@ return {
         date_format = "%m-%d-%Y %H:%M:%S", -- template for the date, check Date format section for more options
         virtual_text_column = 1,  -- virtual text start column, check Start virtual text at column section for more options
     },
-  }
+  },
+  {
+    -- Highlights conflict markers and gives quick resolve mappings.
+    "akinsho/git-conflict.nvim",
+    version = "*",
+    event = "BufReadPre",
+    opts = {
+      default_mappings = {
+        ours = "co",
+        theirs = "ct",
+        none = "c0",
+        both = "cb",
+        next = "]x",
+        prev = "[x",
+      },
+      default_commands = true,
+      disable_diagnostics = true,
+    },
+  },
 }
