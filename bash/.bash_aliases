@@ -21,3 +21,5 @@ alias npmclean='npm cache clean --force'
 alias dush='sudo du -h --max-depth=1 ./ | sort -h'
 alias dbang='docker container prune -f && docker volume prune -f && docker system prune -f'
 alias clip="xclip -selection clipboard"
+alias python="python3"
+alias clawde="claude --dangerously-skip-permissions"
